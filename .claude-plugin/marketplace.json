@@ -1,0 +1,26 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "flegars-perso-marketplace",
+  "owner": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "metadata": {
+    "description": "Marketplace personnelle de plugins Claude Code de Florian Legars",
+    "version": "0.1.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "codebase-to-us",
+      "source": "./plugins/codebase-to-us",
+      "description": "Rédige des User Stories standardisées à partir de l'analyse de la codebase",
+      "version": "0.1.0",
+      "author": {
+        "name": "Florian Legars"
+      },
+      "keywords": ["user-story", "spec", "codebase", "product-owner", "documentation"],
+      "category": "productivity"
+    }
+  ]
+}
