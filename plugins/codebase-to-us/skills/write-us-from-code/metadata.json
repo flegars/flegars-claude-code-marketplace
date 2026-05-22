@@ -1,0 +1,13 @@
+{
+  "name": "write-us-from-code",
+  "displayName": "Write US From Code",
+  "description": "Rédige une User Story standardisée à partir de l'analyse de la codebase courante",
+  "version": "0.1.0",
+  "author": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "tags": ["user-story", "spec", "codebase", "product-owner", "documentation"],
+  "category": "Productivity",
+  "updatedAt": "2026-05-22"
+}
