@@ -1,0 +1,13 @@
+{
+  "name": "review-pr",
+  "displayName": "Review PR",
+  "description": "Review standardisée d'une Pull Request GitHub ou Azure DevOps avec note /20, ressenti général, axes d'amélioration et alignement avec les US rattachées",
+  "version": "0.1.0",
+  "author": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "tags": ["code-review", "pull-request", "github", "azure-devops", "user-story", "quality"],
+  "category": "Quality",
+  "updatedAt": "2026-05-26"
+}

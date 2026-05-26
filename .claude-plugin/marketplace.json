@@ -21,6 +21,17 @@
       },
       "keywords": ["user-story", "spec", "codebase", "product-owner", "documentation"],
       "category": "productivity"
+    },
+    {
+      "name": "pr-reviewer",
+      "source": "./plugins/pr-reviewer",
+      "description": "Review standardisée de Pull Requests GitHub ou Azure DevOps avec note /20, ressenti global, axes d'amélioration et alignement avec les US rattachées",
+      "version": "0.1.0",
+      "author": {
+        "name": "Florian Legars"
+      },
+      "keywords": ["code-review", "pull-request", "github", "azure-devops", "user-story", "quality"],
+      "category": "quality"
     }
   ]
 }

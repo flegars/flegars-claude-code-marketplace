@@ -42,6 +42,26 @@ Puis installer un plugin :
 
 **Quand l'utiliser** — Avant de démarrer une feature pour formaliser la spec, ou pour rattraper la documentation d'une feature existante.
 
+### [`pr-reviewer`](./plugins/pr-reviewer)
+
+> Review standardisée de Pull Requests GitHub ou Azure DevOps avec note /20, ressenti global, axes d'amélioration et alignement avec les User Stories rattachées.
+
+**À quoi ça sert** — Produire des reviews de PR **reproductibles** : même grille, même structure, même rigueur quel que soit le repo. Le plugin se branche sur les connexions déjà disponibles (`gh` CLI pour GitHub, MCP `devops` pour Azure DevOps) pour récupérer la PR, son diff et ses User Stories / work items rattachés, puis confronte le code livré à ce que demandent les specs.
+
+**Ce que ça apporte :**
+
+- **Slash command `/review-pr [url] [--inline|--local]`** — Orchestre un flow en 5 phases :
+  1. **Cible** — Détection auto via la branche courante (`gh pr view`) ou MCP `devops`, sinon URL passée en argument
+  2. **Fetch** — PR + diff + US/work items rattachés (parsing `closes #N` côté GitHub, liens explicites côté Azure)
+  3. **Détection stack** — `composer.json` / `package.json` / `go.mod` / `pyproject.toml` pour activer la sous-grille adaptative
+  4. **Analyse** — Délégation à l'agent `pr-reviewer` avec tout le contexte
+  5. **Sortie** — Commentaires inline + commentaire global sur la PR (mode `--inline`) ou fichier `reviews/PR-<id>.md` (mode `--local`)
+- **Agent `pr-reviewer`** — Un reviewer senior multi-stack rigoureux, qui suit à la lettre la grille et le template figés du plugin. Cite des lignes précises (`path:line`), propose des fix copiables, refuse d'inventer des patterns « du projet » qu'il n'aurait pas lus.
+- **Grille de notation hybride /20** — 14 points universels (qualité, sécurité, tests, lisibilité, **alignement US**, architecture) + 6 points adaptatifs activés selon la stack détectée (Symfony/DDD, Go, TypeScript/React, Python, ou fallback générique).
+- **Template de rapport figé** — Structure imposée : titre `📊 Score: X/20 — <ressenti>` / 📋 Alignement avec les US / ✅ Points forts / ⚠️ Axes d'amélioration par sévérité (Critique / Important / Mineur) / 🐛 Problèmes critiques si applicable / 📚 Conformité architecture (sous-grille adaptative) / 💡 Recommandations actionnables / 🧮 Détail du score.
+
+**Quand l'utiliser** — Pour reviewer une PR ouverte (avant ou après merge), pour standardiser les reviews d'équipe, ou pour s'auto-évaluer avant de demander une review humaine.
+
 ## Structure
 
 ```
@@ -49,17 +69,29 @@ flegars-claude-code-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json     # Manifest de la marketplace
 ├── plugins/
-│   └── codebase-to-us/
+│   ├── codebase-to-us/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── agents/
+│   │   │   └── us-writer.md
+│   │   └── skills/
+│   │       └── write-us-from-code/
+│   │           ├── SKILL.md
+│   │           ├── metadata.json
+│   │           └── references/
+│   │               └── us-template.md
+│   └── pr-reviewer/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── agents/
-│       │   └── us-writer.md
+│       │   └── pr-reviewer.md
 │       └── skills/
-│           └── write-us-from-code/
+│           └── review-pr/
 │               ├── SKILL.md
 │               ├── metadata.json
 │               └── references/
-│                   └── us-template.md
+│                   ├── review-template.md
+│                   └── scoring-rubric.md
 └── README.md
 ```
 
