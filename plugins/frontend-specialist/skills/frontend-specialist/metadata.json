@@ -1,0 +1,13 @@
+{
+  "name": "frontend-specialist",
+  "displayName": "Frontend Specialist (React)",
+  "description": "Expert front-end React qui analyse les patterns du projet avant toute proposition et n'invente jamais une convention qui n'existe pas",
+  "version": "0.1.0",
+  "author": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "tags": ["react", "frontend", "patterns", "codebase-analysis", "hooks", "state-management", "testing"],
+  "category": "Engineering",
+  "updatedAt": "2026-05-27"
+}
