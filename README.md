@@ -62,6 +62,46 @@ Puis installer un plugin :
 
 **Quand l'utiliser** — Pour reviewer une PR ouverte (avant ou après merge), pour standardiser les reviews d'équipe, ou pour s'auto-évaluer avant de demander une review humaine.
 
+### [`frontend-specialist`](./plugins/frontend-specialist)
+
+> Expert front-end React qui analyse les patterns du projet avant toute proposition et n'invente jamais une convention qui n'existe pas dans la codebase.
+
+**À quoi ça sert** — Intervenir sur une codebase React (analyse, proposition ou implémentation) en s'alignant **strictement** sur les patterns observés : structure de dossiers, hooks custom, lib d'état (Redux / Zustand / Tanstack Query), conventions de tests (RTL / Vitest / Jest), styling. L'agent lit le code avant de proposer, et signale explicitement quand un pattern n'est pas observable plutôt que de l'inventer.
+
+**Ce que ça apporte :**
+
+- **Slash command `/frontend-specialist`** — Orchestre un flow en 5 phases :
+  1. **Cadrage** — Reformulation du besoin et choix du mode (`analyse` / `proposition` / `implementation`)
+  2. **Vérification stack** — Détection React + bundler + TS + lib d'état + lib de tests, mise en garde si Next.js / React Native (hors périmètre validé)
+  3. **Cartographie des patterns** — Structure de dossiers, hooks, gestion d'état, tests, styling, typage — chaque item ancré sur des fichiers du repo
+  4. **Intervention** — Délégation à l'agent `frontend-specialist` avec toute la cartographie
+  5. **Sortie** — Rapport inline, proposition à valider, ou édition effective des fichiers (avec validation intermédiaire avant écriture)
+- **Agent `frontend-specialist`** — Un développeur front senior qui refuse d'inventer un pattern : toute affirmation pointe un fichier précis (`src/path/file.tsx:42`). Présente des alternatives quand plusieurs approches sont raisonnables, recommande une option, et liste les risques.
+- **Checklist de cartographie figée** — Référence `react-pattern-checklist.md` qui guide systématiquement l'analyse : stack, structure, composition, hooks, état (local/partagé/serveur), effets, erreurs, tests, typage, styling. Format de synthèse standardisé pour nourrir l'agent.
+
+**Quand l'utiliser** — Onboarder sur une codebase React inconnue (mode `analyse`), préparer une feature front avec un plan validé avant code (mode `proposition`), ou implémenter directement une feature qui respecte les conventions du repo (mode `implementation`).
+
+### [`backend-specialist`](./plugins/backend-specialist)
+
+> Expert back-end PHP/Symfony qui privilégie la solution la plus simple alignée sur les patterns du projet, et applique SOLID strictement sur le code pérenne.
+
+**À quoi ça sert** — Intervenir sur une codebase PHP/Symfony (analyse, proposition ou implémentation) avec un curseur **simplicité ↔ SOLID** arbitré explicitement en début de flow. L'agent ne complexifie jamais « pour le plaisir » : en régime `simple` (code jetable / utilitaire / one-shot), il défend la solution la plus directe et liste explicitement les abstractions volontairement non posées. En régime `perenne` (cœur métier / contrat public / longue durée de vie), il applique SOLID et les patterns hexagonal/CQRS du projet sans concession.
+
+**Ce que ça apporte :**
+
+- **Slash command `/backend-specialist`** — Orchestre un flow en 6 phases :
+  1. **Cadrage** — Reformulation du besoin et choix du mode (`analyse` / `proposition` / `implementation`)
+  2. **Qualification du régime** — `simple` vs `perenne`, avec une grille d'aide à la décision si l'utilisateur hésite
+  3. **Vérification stack** — PHP + Symfony + Doctrine + API Platform + Messenger + tests + PHPStan
+  4. **Cartographie des patterns** — Architecture (DDD/hexagonal ou classique), CQRS, API Platform, Doctrine, sécurité, Domain Events / outbox — chaque item ancré sur des fichiers du repo
+  5. **Intervention** — Délégation à l'agent `backend-specialist` avec toute la cartographie + le régime
+  6. **Sortie** — Rapport inline, proposition à valider, ou édition effective des fichiers (avec validation intermédiaire avant écriture, et checks PHPStan / PHPUnit ciblés)
+- **Agent `backend-specialist`** — Un développeur back senior qui s'arrête et signale tout mismatch entre le régime déclaré et le périmètre réel (ex : régime `simple` demandé alors que le périmètre touche `src/Domain/`). En régime `simple`, il trace explicitement les abstractions non posées. En régime `perenne`, il applique SRP / OCP / LSP / ISP / DIP et respecte les patterns hexagonal/CQRS du projet.
+- **Référence figée d'arbitrage `simplicity-vs-solid.md`** — Définition des deux régimes, tableau de décision rapide, liste des mismatches typiques, format de traçabilité des abstractions non posées.
+- **Checklist de cartographie figée `symfony-pattern-checklist.md`** — Guide systématique : stack, structure, CQRS/Messenger, API Platform, Doctrine, tests, sécurité, Domain Events / outbox, conventions de code. Format de synthèse standardisé pour nourrir l'agent.
+
+**Quand l'utiliser** — Pour toute intervention back où il faut éviter à la fois le **sur-engineering** (couches inutiles sur un script one-shot) et la **dette technique** (raccourcis SOLID sur du cœur métier). En particulier : nouvelle feature dans le Domain, refacto d'un service partagé, script CLI ponctuel, fix sur cœur métier.
+
 ## Structure
 
 ```
@@ -80,18 +120,41 @@ flegars-claude-code-marketplace/
 │   │           ├── metadata.json
 │   │           └── references/
 │   │               └── us-template.md
-│   └── pr-reviewer/
+│   ├── pr-reviewer/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── agents/
+│   │   │   └── pr-reviewer.md
+│   │   └── skills/
+│   │       └── review-pr/
+│   │           ├── SKILL.md
+│   │           ├── metadata.json
+│   │           └── references/
+│   │               ├── review-template.md
+│   │               └── scoring-rubric.md
+│   ├── frontend-specialist/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   ├── agents/
+│   │   │   └── frontend-specialist.md
+│   │   └── skills/
+│   │       └── frontend-specialist/
+│   │           ├── SKILL.md
+│   │           ├── metadata.json
+│   │           └── references/
+│   │               └── react-pattern-checklist.md
+│   └── backend-specialist/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       ├── agents/
-│       │   └── pr-reviewer.md
+│       │   └── backend-specialist.md
 │       └── skills/
-│           └── review-pr/
+│           └── backend-specialist/
 │               ├── SKILL.md
 │               ├── metadata.json
 │               └── references/
-│                   ├── review-template.md
-│                   └── scoring-rubric.md
+│                   ├── simplicity-vs-solid.md
+│                   └── symfony-pattern-checklist.md
 └── README.md
 ```
 

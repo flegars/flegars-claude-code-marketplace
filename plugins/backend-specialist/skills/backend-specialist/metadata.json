@@ -1,0 +1,13 @@
+{
+  "name": "backend-specialist",
+  "displayName": "Backend Specialist (PHP / Symfony)",
+  "description": "Expert back-end PHP/Symfony qui privilégie la simplicité par défaut et applique SOLID strictement sur le code pérenne, en s'alignant sur les patterns du projet",
+  "version": "0.1.0",
+  "author": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "tags": ["php", "symfony", "backend", "ddd", "solid", "simplicity", "patterns", "codebase-analysis"],
+  "category": "Engineering",
+  "updatedAt": "2026-05-27"
+}

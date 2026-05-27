@@ -1,0 +1,11 @@
+{
+  "name": "backend-specialist",
+  "description": "Expert back-end PHP/Symfony qui privilégie la solution la plus simple alignée sur les patterns du projet, et applique SOLID strictement dès qu'il s'agit de code pérenne / cœur métier",
+  "version": "0.1.0",
+  "author": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": ["php", "symfony", "backend", "ddd", "solid", "simplicity", "patterns", "codebase-analysis"]
+}
