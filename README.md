@@ -1,6 +1,6 @@
 # flegars-claude-code-marketplace
 
-Marketplace personnelle de plugins [Claude Code](https://claude.com/claude-code) de Florian Legars.
+Marketplace personnelle de plugins [Claude Code](https://claude.com/claude-code).
 
 ## Installation
 
