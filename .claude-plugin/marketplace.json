@@ -32,6 +32,28 @@
       },
       "keywords": ["code-review", "pull-request", "github", "azure-devops", "user-story", "quality"],
       "category": "quality"
+    },
+    {
+      "name": "frontend-specialist",
+      "source": "./plugins/frontend-specialist",
+      "description": "Expert front-end React qui analyse les patterns du projet avant toute proposition et n'invente jamais une convention qui n'existe pas dans la codebase",
+      "version": "0.1.0",
+      "author": {
+        "name": "Florian Legars"
+      },
+      "keywords": ["react", "frontend", "patterns", "codebase-analysis", "hooks", "state-management", "testing"],
+      "category": "engineering"
+    },
+    {
+      "name": "backend-specialist",
+      "source": "./plugins/backend-specialist",
+      "description": "Expert back-end PHP/Symfony qui privilégie la solution la plus simple alignée sur les patterns du projet, et applique SOLID strictement sur le code pérenne",
+      "version": "0.1.0",
+      "author": {
+        "name": "Florian Legars"
+      },
+      "keywords": ["php", "symfony", "backend", "ddd", "solid", "simplicity", "patterns", "codebase-analysis"],
+      "category": "engineering"
     }
   ]
 }
