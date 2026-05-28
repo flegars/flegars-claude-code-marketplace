@@ -106,19 +106,21 @@ Puis installer un plugin :
 
 > Récapitule l'activité Azure DevOps de l'utilisateur courant sur les dernières 24 heures glissantes.
 
-**À quoi ça sert** — Préparer son daily, retrouver ce sur quoi on a touché avant un changement de contexte, ou auditer ses propres traces. Le plugin agrège **Pull Requests** (créées / mergées / commentées / en attente de review), **commits**, **work items** (créés / changés / commentés) et **threads de PR** (commentaires postés + réponses reçues), tout cela via le **MCP `devops`** déjà configuré sur la machine de Florian (org `INTERINVEST`). Read-only par construction : aucune écriture côté ADO.
+**À quoi ça sert** — Préparer son daily, retrouver ce sur quoi on a touché avant un changement de contexte, ou auditer ses propres traces. Le plugin agrège **Pull Requests** (créées / mergées / commentées / en attente de review), **commits**, **work items** (créés / changés / commentés) et **threads de PR** (commentaires postés + réponses reçues). Source primaire : la **CLI `az`** avec l'extension `azure-devops` (org `INTERINVEST` par défaut). **Fallback** sur le MCP `devops` si `az` n'est pas installé / non authentifié. Read-only par construction (`list` / `show` / `query` / `az rest --method get` uniquement) : aucune écriture côté ADO.
 
 **Ce que ça apporte :**
 
-- **Slash command `/daily-activity [--hours=N] [--project=<name>] [--org=<org>]`** — Orchestre un flow en 4 phases :
-  1. **Préparation** — Calcul de la fenêtre `now − N heures`, vérification du MCP `devops`, résolution de `@me`
-  2. **Collecte multi-projets** — Pour chaque projet de l'org : PRs, commits, work items, threads (appels MCP groupés en parallèle quand possible)
+- **Slash command `/daily-activity [--hours=N] [--project=<name>] [--org=<org>] [--save]`** — Orchestre un flow en 4 phases :
+  1. **Préparation** — Calcul de la fenêtre `now − N heures`, sélection de la source (`az` → MCP fallback), résolution de `@me`
+  2. **Collecte multi-projets** — Pour chaque projet de l'org : PRs (`az repos pr list --creator/--reviewer`), commits (`az rest` sur `_apis/git/repositories/.../commits`), work items (`az boards query --wiql`), threads PR (`az rest` sur `.../pullRequests/<id>/threads`), groupés en parallèle quand possible
   3. **Filtrage côté client** — Re-filtrage strict sur la fenêtre `[since, now]` pour garantir la cohérence, déduplication des PRs croisées
-  4. **Restitution** — Rapport markdown inline (par défaut) ou sauvegarde optionnelle dans `daily-activity/YYYY-MM-DD.md`
-- **Format de rapport figé** — Structure imposée : en-tête (fenêtre, org, utilisateur, projets scannés) / **📊 Résumé** chiffré / **🟢 Pull Requests** groupées par type d'implication / **📝 Commits** groupés par repo / **🎯 Work Items** par type d'action / **💬 Threads PR** (postés + réponses à traiter) / **⏱️ Timeline chronologique inversée** / **⚠️ Limitations** explicites si collecte partielle.
-- **Robustesse** — Tolérance aux échecs partiels (un projet inaccessible n'arrête pas le flow, il est listé dans `⚠️ Limitations`), troncature à 200 caractères des extraits de commentaires, masquage automatique des secrets détectés, fallback explicite pour les commits si le MCP n'expose pas `repo_list_commits`.
+  4. **Restitution** — Rapport markdown inline (par défaut) ou sauvegarde dans `daily-activity/YYYY-MM-DD.md` avec `--save`
+- **Format de rapport figé** — Structure imposée : en-tête (fenêtre, org, utilisateur, projets scannés, source utilisée) / **📊 Résumé** chiffré / **🟢 Pull Requests** groupées par type d'implication / **📝 Commits** groupés par repo / **🎯 Work Items** par type d'action / **💬 Threads PR** (postés + réponses à traiter) / **⏱️ Timeline chronologique inversée** / **⚠️ Limitations** explicites si collecte partielle.
+- **Robustesse** — Bascule automatique `az → MCP` si la CLI n'est pas opérationnelle (binaire / extension / auth / accès org), tolérance aux échecs partiels (un projet inaccessible n'arrête pas le flow, il est listé dans `⚠️ Limitations`), troncature à 200 caractères des extraits de commentaires, masquage automatique des secrets détectés, fallback explicite pour les commits si l'endpoint REST ne répond pas (dérivation depuis les PRs).
 
 **Quand l'utiliser** — Le matin avant le daily standup, le soir avant de fermer la machine, ou n'importe quand pour répondre à « qu'est-ce que j'ai poussé hier ? ». Particulièrement utile après un context-switch entre plusieurs projets.
+
+**Pré-requis** — `az` CLI installé (`brew install azure-cli`) + extension `azure-devops` (`az extension add --name azure-devops`) + authentification (`az login` puis `az devops login --org https://dev.azure.com/<org>`). Si l'un manque, le plugin bascule automatiquement sur le MCP `devops`.
 
 ## Structure
 
