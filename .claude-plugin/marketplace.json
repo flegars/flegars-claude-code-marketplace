@@ -54,6 +54,17 @@
       },
       "keywords": ["php", "symfony", "backend", "ddd", "solid", "simplicity", "patterns", "codebase-analysis"],
       "category": "engineering"
+    },
+    {
+      "name": "daily-activity",
+      "source": "./plugins/daily-activity",
+      "description": "Récapitule l'activité Azure DevOps de l'utilisateur courant sur les dernières 24 heures glissantes (PRs, commits, work items, threads) via le MCP devops",
+      "version": "0.1.0",
+      "author": {
+        "name": "Florian Legars"
+      },
+      "keywords": ["azure-devops", "activity", "standup", "daily", "recap", "mcp"],
+      "category": "productivity"
     }
   ]
 }

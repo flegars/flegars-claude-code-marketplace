@@ -1,0 +1,13 @@
+{
+  "name": "daily-activity",
+  "displayName": "Daily Activity (Azure DevOps)",
+  "description": "Récapitule l'activité Azure DevOps de l'utilisateur courant sur les dernières 24 heures glissantes (PRs, commits, work items, threads) via le MCP devops",
+  "version": "0.1.0",
+  "author": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "tags": ["azure-devops", "activity", "standup", "daily", "recap", "mcp"],
+  "category": "Productivity",
+  "updatedAt": "2026-05-28"
+}
