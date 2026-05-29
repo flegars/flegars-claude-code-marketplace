@@ -122,6 +122,29 @@ Puis installer un plugin :
 
 **Pré-requis** — `az` CLI installé (`brew install azure-cli`) + extension `azure-devops` (`az extension add --name azure-devops`) + authentification (`az login` puis `az devops login --org https://dev.azure.com/<org>`). Si l'un manque, le plugin bascule automatiquement sur le MCP `devops`.
 
+### [`audit-codebase`](./plugins/audit-codebase)
+
+> Audit back-end PHP/Symfony complet, module par module, qui produit un rapport markdown structuré.
+
+**À quoi ça sert** — Obtenir un **état des lieux exhaustif et standardisé** d'une codebase Symfony : ce qui marche et qu'il faut conserver, ce qui pose risque ou accumule de la dette, ce qui pourrait être simplifié (code "complexe" remplaçable par un pattern plus simple), ce qui manque côté tests, ce qui risque de coûter en perf, et où l'architecture revendiquée fuit en pratique. Le rapport est volontairement **qualifié** par axe (🟢/🟡/🔴) plutôt que noté sur 20 — l'objectif est d'éclairer les décisions, pas de classer.
+
+**Ce que ça apporte :**
+
+- **Slash command `/audit-codebase [--modules=<liste>] [--full]`** — Orchestre un flow en 6 phases :
+  1. **Cadrage** — Périmètre : toute la codebase / liste de modules / un seul module
+  2. **Vérification stack** — PHP + Symfony + Doctrine + API Platform + Messenger + tests + PHPStan (arrêt explicite si stack non Symfony)
+  3. **Auto-détection des modules** — Bounded contexts DDD si présents, fallback sur dossiers métier de `src/`, ou bundles
+  4. **Confirmation** — L'utilisateur valide ou ajuste la liste des modules à auditer
+  5. **Audit module par module** — Délégation à l'agent `backend-specialist` (en régime `perenne`, mode `analyse`) avec la grille d'audit figée en input
+  6. **Agrégation & sortie** — Fusion des findings dans le template, écriture dans `docs/audit/<YYYY-MM-DD>-audit-codebase.md` (jamais d'écrasement)
+- **Grille d'audit figée `audit-grid.md`** — 6 axes obligatoires par module, dans l'ordre : ✅ **Points forts à conserver** (boussole pour les évolutions futures) / ⚠️ **Risques & dette technique** (god classes, fuites de couche, magic strings, sécurité, TODO/FIXME) / 🪓 **Opportunités de simplification** (interfaces à 1 impl, indirections gratuites, DDD cargo-cult, abstractions prématurées — avec condition de vérification systématique avant de proposer de retirer) / 🧪 **Tests & qualité** (couverture par couche, fragilité, sur-mock, PHPStan, fixtures) / 🚀 **Performance & scalabilité** (N+1, pagination absente, sync vs async Messenger, sérialisation) / 🧭 **Cohérence architecturale** (couches étanches, CQRS effectif, Domain Events bien câblés). Chaque finding est ancré sur `path:line`, avec **sévérité** (`bloquant`/`important`/`mineur`) et **effort** (`S`/`M`/`L`).
+- **Template figé du rapport `audit-template.md`** — Structure imposée : front-matter YAML / titre / 🧭 **Synthèse exécutive** (Top 3 forces/risques/simplifications + tableau de scoring qualitatif par axe) / 🗺️ **Cartographie générale** (stack + architecture + tableau des modules) / 📦 **Audit module par module** (un sous-bloc complet avec les 6 axes par module, dans l'ordre) / 🔁 **Recommandations transverses** (findings inter-modules) / 🛣️ **Roadmap suggérée** (Court / Moyen / Long terme — chaque finding une seule fois) / ⚠️ **Limitations de l'audit** (ce qui n'a pas été couvert, traçabilité).
+- **Réutilisation du `backend-specialist`** — Pas d'agent dédié dupliqué : le skill délègue chaque module à l'agent `backend-specialist` (du plugin homonyme), avec la grille en input et le format de sortie imposé par le template. Le `backend-specialist` doit donc être installé en parallèle pour utiliser le plugin.
+
+**Quand l'utiliser** — Pour un état des lieux à la prise de poste sur une codebase Symfony, avant un gros refacto pour identifier la dette et les simplifications, pour préparer un dossier d'arbitrage technique (« qu'est-ce qu'on garde, qu'est-ce qu'on simplifie, qu'est-ce qu'on retravaille »), ou pour cadrer un chantier de réduction de complexité.
+
+**Pré-requis** — Le plugin `backend-specialist@flegars-perso-marketplace` doit être installé (le slash command délègue à son agent).
+
 ## Structure
 
 ```
@@ -175,13 +198,23 @@ flegars-claude-code-marketplace/
 │   │           └── references/
 │   │               ├── simplicity-vs-solid.md
 │   │               └── symfony-pattern-checklist.md
-│   └── daily-activity/
+│   ├── daily-activity/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   └── skills/
+│   │       └── daily-activity/
+│   │           ├── SKILL.md
+│   │           └── metadata.json
+│   └── audit-codebase/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
 │       └── skills/
-│           └── daily-activity/
+│           └── audit-codebase/
 │               ├── SKILL.md
-│               └── metadata.json
+│               ├── metadata.json
+│               └── references/
+│                   ├── audit-grid.md
+│                   └── audit-template.md
 └── README.md
 ```
 
