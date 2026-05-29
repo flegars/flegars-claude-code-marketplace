@@ -1,0 +1,13 @@
+{
+  "name": "audit-codebase",
+  "displayName": "Audit Codebase (PHP / Symfony)",
+  "description": "Audit back-end PHP/Symfony complet, module par module, qui produit un rapport markdown structuré : forces, risques, simplifications, tests, performance, cohérence architecturale.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "tags": ["php", "symfony", "backend", "audit", "tech-debt", "simplification", "ddd", "hexagonal", "cqrs"],
+  "category": "Engineering",
+  "updatedAt": "2026-05-29"
+}
