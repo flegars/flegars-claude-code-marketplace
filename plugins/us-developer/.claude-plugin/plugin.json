@@ -1,0 +1,11 @@
+{
+  "name": "us-developer",
+  "description": "Développe une User Story au périmètre strict : acquisition multi-sources (GitHub / Azure DevOps / fichier .md / markdown collé), extraction structurée des critères d'acceptation, plan ancré dans la codebase, implémentation et vérification critère par critère.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": ["user-story", "implementation", "github", "azure-devops", "acceptance-criteria", "traceability", "strict-scope"]
+}

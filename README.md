@@ -145,6 +145,29 @@ Puis installer un plugin :
 
 **Pré-requis** — Le plugin `backend-specialist@flegars-perso-marketplace` doit être installé (le slash command délègue à son agent).
 
+### [`us-developer`](./plugins/us-developer)
+
+> Développe une User Story au périmètre **strict** (GitHub / Azure DevOps / fichier .md / markdown collé) avec traçabilité critère d'acceptation → code → test.
+
+**À quoi ça sert** — Transformer une US (issue GitHub, work item Azure DevOps, fichier markdown local, ou markdown collé directement) en code livré, **sans dépasser ni omettre** son périmètre. Chaque critère d'acceptation est numéroté `AC-XX`, mappé à un fichier et à au moins un test. Toute décision technique non spécifiée par l'US est tracée dans un **journal des hypothèses**. Tout bug repéré à côté est listé dans le rapport, **jamais corrigé en passant**. Le résultat est un rapport markdown final qu'on peut joindre tel quel à la PR.
+
+**Ce que ça apporte :**
+
+- **Slash command `/us-developer:develop-us <source> [--auto]`** — Orchestre un flow en 7 étapes avec **deux gates** explicites :
+  1. **Acquisition** — Auto-détection du type de source : GitHub (`gh issue/pr view` → fallback API REST), Azure DevOps (MCP `devops` → fallback `az boards work-item show` → fallback API REST + PAT), fichier `.md` local, ou markdown collé. Si ambigu, la commande **demande** plutôt que de deviner.
+  2. **Extraction structurée** — 6 sections obligatoires : Objectif métier / Périmètre IN / Périmètre OUT / Critères d'acceptation reformulés testables (`AC-XX`) / Contraintes techniques explicites / Zones non spécifiées.
+  3. **Gate clarification** — Stop si aucun critère identifié, ambiguïté bloquante, ou contradiction interne. Reste actif même en `--auto` — le strict ne se négocie pas.
+  4. **Plan** — Exploration codebase (`CLAUDE.md`, conventions, lib de test) puis tableau de mapping `critère → fichiers (modif/création) → test(s) prévu(s)`, + décisions techniques par défaut à valider, + effets hors-périmètre identifiés, + commandes de vérification détectées.
+  5. **Gate validation** — Stop par défaut (plan + journal des hypothèses provisoire à valider). Désactivé si `--auto`.
+  6. **Implémentation** — Coder dans le thread principal, périmètre strict respecté, conventions du repo suivies, aucun fichier hors périmètre touché.
+  7. **Vérification + Rapport** — Test par critère, lint/typecheck/LSP, revue par `us-reviewer`, rapport final avec couverture critère → code → test, journal des hypothèses, hors-périmètre délibéré, bugs hors-périmètre repérés (non corrigés).
+- **Agent `us-analyst`** — Lecture seule. Acquisition + extraction structurée + plan ancré dans la codebase. Ne devine jamais : toute zone non spécifiée par l'US est signalée explicitement, toute citation de pattern « du projet » pointe un `path:line` lu.
+- **Agent `us-reviewer`** — Lecture seule. Vérifie strictement : couverture critère → test (✅/⚠️/❌), absence de code en trop, hypothèses non documentées dans le diff, non-régression. Verdict tranché : `✅ conforme` / `⚠️ avec réserves` / `❌ écarts bloquants`.
+
+**Quand l'utiliser** — Au démarrage de toute implémentation d'US existante (issue, work item, spec). Pour éviter à la fois le **sur-périmètre** (« tant que j'y suis ») et le **sous-périmètre** (un critère oublié). Pour produire automatiquement un **rapport de traçabilité** critère → code → test à joindre à la PR. Avec `--auto`, pour enchaîner sans gate intermédiaire quand l'US est claire et que le rapport final suffit comme contrôle a posteriori (le gate clarification reste actif quoi qu'il arrive).
+
+**Pré-requis** — Au moins l'une des sources doit être accessible : `gh` CLI authentifiée pour GitHub, MCP `devops` ou `az` CLI pour Azure DevOps, ou un fichier `.md` local, ou un markdown collé.
+
 ## Structure
 
 ```
@@ -205,16 +228,25 @@ flegars-claude-code-marketplace/
 │   │       └── daily-activity/
 │   │           ├── SKILL.md
 │   │           └── metadata.json
-│   └── audit-codebase/
+│   ├── audit-codebase/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   └── skills/
+│   │       └── audit-codebase/
+│   │           ├── SKILL.md
+│   │           ├── metadata.json
+│   │           └── references/
+│   │               ├── audit-grid.md
+│   │               └── audit-template.md
+│   └── us-developer/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
-│       └── skills/
-│           └── audit-codebase/
-│               ├── SKILL.md
-│               ├── metadata.json
-│               └── references/
-│                   ├── audit-grid.md
-│                   └── audit-template.md
+│       ├── agents/
+│       │   ├── us-analyst.md
+│       │   └── us-reviewer.md
+│       ├── commands/
+│       │   └── develop-us.md
+│       └── README.md
 └── README.md
 ```
 

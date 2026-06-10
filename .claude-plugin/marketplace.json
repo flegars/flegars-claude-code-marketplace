@@ -76,6 +76,17 @@
       },
       "keywords": ["php", "symfony", "backend", "audit", "tech-debt", "simplification", "ddd", "hexagonal", "cqrs"],
       "category": "engineering"
+    },
+    {
+      "name": "us-developer",
+      "source": "./plugins/us-developer",
+      "description": "Développe une User Story au périmètre strict (GitHub / Azure DevOps / fichier .md / markdown collé) avec traçabilité critère d'acceptation → code → test, gates de clarification et de validation, et rapport final structuré",
+      "version": "0.1.0",
+      "author": {
+        "name": "Florian Legars"
+      },
+      "keywords": ["user-story", "implementation", "github", "azure-devops", "acceptance-criteria", "traceability", "strict-scope"],
+      "category": "engineering"
     }
   ]
 }
