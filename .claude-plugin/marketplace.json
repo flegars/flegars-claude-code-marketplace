@@ -26,7 +26,7 @@
       "name": "pr-reviewer",
       "source": "./plugins/pr-reviewer",
       "description": "Review standardisée de Pull Requests GitHub ou Azure DevOps avec note /20, ressenti global, axes d'amélioration et alignement avec les US rattachées",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "Florian Legars"
       },

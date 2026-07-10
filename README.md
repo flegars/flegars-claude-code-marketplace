@@ -55,7 +55,7 @@ Puis installer un plugin :
   2. **Fetch** — PR + diff + US/work items rattachés (parsing `closes #N` côté GitHub, liens explicites côté Azure)
   3. **Détection stack** — `composer.json` / `package.json` / `go.mod` / `pyproject.toml` pour activer la sous-grille adaptative
   4. **Analyse** — Délégation à l'agent `pr-reviewer` avec tout le contexte
-  5. **Sortie** — Commentaires inline + commentaire global sur la PR (mode `--inline`) ou fichier `reviews/PR-<id>.md` (mode `--local`)
+  5. **Sortie** — Commentaires inline + commentaire global sur la PR (mode `--inline`) ou fichier `reviews/PR-<id>.md` (mode `--local`). **Sur Azure DevOps, publication inline d'office** : la review est postée directement sur la PR sans redemander le mode ni confirmation préalable (`--local` pour forcer le fichier local ; GitHub garde sa confirmation avant publication)
 - **Agent `pr-reviewer`** — Un reviewer senior multi-stack rigoureux, qui suit à la lettre la grille et le template figés du plugin. Cite des lignes précises (`path:line`), propose des fix copiables, refuse d'inventer des patterns « du projet » qu'il n'aurait pas lus.
 - **Grille de notation hybride /20** — 14 points universels (qualité, sécurité, tests, lisibilité, **alignement US**, architecture) + 6 points adaptatifs activés selon la stack détectée (Symfony/DDD, Go, TypeScript/React, Python, ou fallback générique).
 - **Template de rapport figé** — Structure imposée : titre `📊 Score: X/20 — <ressenti>` / 📋 Alignement avec les US / ✅ Points forts / ⚠️ Axes d'amélioration par sévérité (Critique / Important / Mineur) / 🐛 Problèmes critiques si applicable / 📚 Conformité architecture (sous-grille adaptative) / 💡 Recommandations actionnables / 🧮 Détail du score.

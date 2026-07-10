@@ -160,7 +160,19 @@ L'agent retourne :
 
 ## Phase 5 — Sortie
 
-**Demander le mode de sortie via `AskUserQuestion` si non précisé en argument** :
+### Choix du mode de sortie
+
+**Cas Azure DevOps — publication inline d'office (comportement par défaut) :**
+
+> Si la plateforme est `azure-devops` et qu'**aucun mode n'a été passé en argument** (`--inline` / `--local`), le mode est **`inline` par défaut, sans rien demander** : ne pas poser la question du mode de sortie, et ne pas poser la confirmation avant publication (voir « Règles transverses »). La review est postée directement sur la PR ADO.
+>
+> L'utilisateur garde la main pour forcer un autre comportement :
+> - `--local` → écrit le fichier markdown local au lieu de publier.
+> - `--inline` → identique au défaut (inline), explicitement.
+>
+> Le fallback automatique en mode `local` reste actif si la publication échoue (MCP indisponible, permissions).
+
+**Tous les autres cas — demander le mode de sortie via `AskUserQuestion` si non précisé en argument** :
 
 - **Commentaires inline sur la PR (recommandé)** — Rapport global + commentaires inline directement sur la PR distante.
 - **Fichier markdown local** — Écrit dans `reviews/PR-<id>.md` à la racine du repo courant. Pas de pollution de la PR distante.
@@ -219,7 +231,8 @@ Exécuter d'abord `local` (pas de risque), puis `inline`. Si `inline` échoue, l
 
 - **Langue** : tout le flow, toutes les questions, et le rapport final sont en **français**.
 - **Pas de modification du repo courant** sans accord explicite : seul l'écriture dans `reviews/` est autorisée en mode `local`, et la création de ce dossier est explicite.
-- **Pas de publication silencieuse** : en mode `inline`, toujours confirmer à l'utilisateur ce qui va être posté **avant** la publication. Lui montrer le rapport et lui demander une dernière confirmation `AskUserQuestion` : « Publier la review sur la PR ? » (Oui / Non, montrer en local seulement / Modifier avant de publier).
+- **Pas de publication silencieuse (GitHub)** : en mode `inline` sur **GitHub**, toujours confirmer à l'utilisateur ce qui va être posté **avant** la publication. Lui montrer le rapport et lui demander une dernière confirmation `AskUserQuestion` : « Publier la review sur la PR ? » (Oui / Non, montrer en local seulement / Modifier avant de publier).
+- **Publication d'office (Azure DevOps)** : sur **Azure DevOps** en mode `inline` (le défaut), publier directement sans confirmation préalable (voir Phase 5). Afficher quand même le rapport et confirmer **après coup** les ressources créées (thread global + threads inline). Cette exception ne s'applique qu'à ADO ; `--local` permet de basculer en fichier local sans publier.
 - **Pas d'invention de US** : si aucune n'est rattachée, le rapport doit l'indiquer explicitement (pas de bricolage).
 - **Confidentialité** : ne pas inclure dans un commentaire public d'éventuelles infos sensibles vues dans le repo (clés API, secrets) — si tu en repères dans le diff, le signaler en `🐛 Problèmes critiques` du rapport mais sans recopier la valeur.
 - **Une seule review par invocation** : ne pas enchaîner sur plusieurs PR en série. Une PR = un appel du skill.
