@@ -1,6 +1,6 @@
 ---
 name: us-writer
-description: "Rédige des User Stories standardisées à partir d'une analyse de la codebase. Utilise ce sous-agent quand l'utilisateur veut transformer un besoin métier en US complète en s'appuyant sur le code existant (comportement actuel, fichiers concernés, gap fonctionnel). Suit systématiquement le template figé du plugin codebase-to-us. Invoqué par le skill /write-us-from-code mais peut aussi être appelé directement."
+description: "Rédige des User Stories standardisées à partir d'une analyse de la codebase. Utilise ce sous-agent quand l'utilisateur veut transformer un besoin métier en US complète en s'appuyant sur le code existant (comportement actuel, fichiers concernés, gap fonctionnel). Suit systématiquement le template figé du plugin us-writer. Invoqué par le skill /write-us-from-code mais peut aussi être appelé directement."
 tools:
   - Read
   - Glob

@@ -1,7 +1,8 @@
 ---
 name: write-us-from-brief
-description: "Rédige une User Story standardisée à partir d'un brief externe, sans accès à la codebase. Sources acceptées : texte de recueil de besoin collé inline, description de maquette / UI, fichier local (.md/.txt/.pdf), ou URL de doc partagée (Notion, Confluence…). Orchestre un flow en 4 phases : cadrage du besoin → acquisition & lecture des sources → rédaction via l'agent us-drafter → sortie (fichier docs/user-stories/ ou inline). Toutes les US suivent obligatoirement la structure figée du plugin. Pensé pour Claude cowork ou le cadrage amont, quand le code n'est pas disponible. Déclencher quand l'utilisateur dit : /write-us-from-brief, 'écris une US sans le code', 'rédige une US à partir de cette maquette', 'transforme ce recueil de besoin en User Story', 'US à partir de ce doc', ou fournit un brief/maquette/URL à formaliser en spec."
+description: "Rédige une User Story standardisée à partir d'un brief externe, sans accès à la codebase. Sources acceptées : texte de recueil de besoin collé inline, description de maquette / UI, fichier local (.md/.txt/.pdf), URL de doc partagée (Notion, Confluence…), ou une ancienne US à mettre à jour. Orchestre un flow en 4 phases : cadrage du besoin → acquisition & lecture des sources → rédaction via l'agent us-drafter → sortie (fichier docs/user-stories/ ou inline). Toutes les US suivent obligatoirement la structure figée du plugin. Pensé pour Claude cowork ou le cadrage amont, quand le code n'est pas disponible. Déclencher quand l'utilisateur dit : /write-us-from-brief, 'écris une US sans le code', 'rédige une US à partir de cette maquette', 'transforme ce recueil de besoin en User Story', 'US à partir de ce doc', 'mets à jour cette US', ou fournit un brief/maquette/URL/US à formaliser ou réviser."
 user_invocable: true
+argument-hint: "[chemin/brief.md | chemin/ancienne-US.md | lien-maquette | url-doc | texte du besoin]"
 ---
 
 # Write US From Brief
@@ -36,12 +37,18 @@ Reformuler le besoin en 3-5 lignes (persona, déclencheur, résultat attendu) et
 
 ## Phase 2 — Acquisition & lecture des sources
 
-Identifier **d'où vient la matière** puis la récupérer. Si la source n'est pas évidente, demander via `AskUserQuestion` : **« Quelle est la source du besoin ? »** (choix multiple) :
+Identifier **d'où vient la matière** puis la récupérer. Si un argument a été passé au slash command (`$ARGUMENTS`), l'interpréter directement sans reposer la question :
+- un **chemin de fichier** (`.md` / `.txt` / `.pdf`) → source « fichier local » (ou « ancienne US à mettre à jour » si le fichier est déjà une US) ;
+- une **URL** → source « URL / doc externe » (ou « maquette » si c'est un lien de maquette) ;
+- du **texte libre** → source « texte collé inline ».
+
+Si la source n'est pas évidente (aucun argument, ou argument ambigu), demander via `AskUserQuestion` : **« Quelle est la source du besoin ? »** (choix multiple) :
 
 - **Texte collé inline** — résumé de recueil de besoin, notes de réunion, description libre déjà dans la conversation.
 - **Description de maquette / UI** — écran(s) décrits (champs, ordre, états, messages) pour dériver les critères UI.
 - **Fichier local** — un `.md` / `.txt` / `.pdf` dans le répertoire de travail (à lire avec `Read` ; localiser avec `Glob`/`Grep` au besoin ; un PDF se lit via `Read` avec le paramètre de pages).
 - **URL / doc externe** — Notion, Confluence, doc partagée (à récupérer avec `WebFetch`).
+- **Ancienne US à mettre à jour** — un fichier d'US existant (souvent `docs/user-stories/US-*.md`) à faire évoluer : on repart de l'US actuelle comme base, on applique les changements demandés, et on réécrit l'US complète au même format figé (jamais un patch partiel). Signaler dans « Questions ouvertes » ce qui a changé si ce n'est pas explicite.
 
 Récupérer effectivement le contenu des sources retenues (lecture fichier, fetch URL). **Ne pas explorer de codebase** : ce skill part du brief, même si un repo est présent.
 

@@ -1,6 +1,6 @@
 # Template standardisé d'une User Story
 
-> Ce template est la **structure de référence figée** utilisée par le plugin `codebase-to-us`. Toute US générée par le plugin DOIT respecter intégralement cette structure et l'ordre des sections.
+> Ce template est la **structure de référence figée** utilisée par le plugin `us-writer`. Toute US générée par le plugin DOIT respecter intégralement cette structure et l'ordre des sections.
 
 Chaque section ci-dessous est obligatoire sauf mention explicite « *(si applicable)* ».
 

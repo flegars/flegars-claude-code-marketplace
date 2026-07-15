@@ -2,6 +2,7 @@
 name: write-us-from-code
 description: "Rédige une User Story standardisée à partir de l'analyse de la codebase courante. Orchestre un flow en 4 phases : cadrage du besoin → exploration codebase → rédaction via l'agent us-writer → sortie (fichier docs/user-stories/ ou inline). Toutes les US suivent obligatoirement la structure figée du plugin. Déclencher quand l'utilisateur dit : /write-us-from-code, 'écris une US', 'rédige une US à partir du code', 'transforme ce besoin en User Story', ou veut formaliser une feature en spec ancrée dans le code existant."
 user_invocable: true
+argument-hint: "[description du besoin | domaine + feature à spécifier]"
 ---
 
 # Write US From Code
