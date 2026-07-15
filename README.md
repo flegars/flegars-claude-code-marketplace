@@ -26,21 +26,32 @@ Puis installer un plugin :
 
 ### [`codebase-to-us`](./plugins/codebase-to-us)
 
-> Rédige des User Stories standardisées à partir de l'analyse de la codebase courante.
+> Rédige des User Stories standardisées suivant un template figé — à partir de la codebase **ou** d'un brief externe quand le code n'est pas disponible.
 
-**À quoi ça sert** — Transformer un besoin métier (forward US) ou une feature déjà implémentée (reverse US) en User Story complète, ancrée dans le code existant. Toutes les US produites suivent **systématiquement** la même structure figée, ce qui garantit cohérence et exhaustivité d'une US à l'autre.
+**À quoi ça sert** — Transformer un besoin en User Story complète et exhaustive, toujours structurée selon la **même** grille figée. Deux points d'entrée selon ce dont on dispose :
+
+- **Avec le code** (`/write-us-from-code`) — Ancrer l'US dans la codebase courante : forward US (feature à venir) ou reverse US (documenter une feature déjà implémentée).
+- **Sans le code** (`/write-us-from-brief`) — Partir d'un brief externe (recueil de besoin, maquette, fichier, doc). Pensé pour **Claude cowork** ou le cadrage amont, quand aucun repo n'est monté.
+
+Les deux commandes produisent des US suivant **systématiquement** la même structure figée, ce qui garantit cohérence et exhaustivité d'une US à l'autre.
 
 **Ce que ça apporte :**
 
-- **Slash command `/write-us-from-code`** — Orchestre un flow en 4 phases :
+- **Slash command `/write-us-from-code`** — US ancrée dans le code. Flow en 4 phases :
   1. **Cadrage** — Reformulation du besoin et choix forward / reverse US
   2. **Exploration codebase** — Identification des fichiers, endpoints, entités et events concernés
   3. **Rédaction** — Délégation à l'agent `us-writer` avec le contexte collecté
   4. **Sortie** — Écriture dans `docs/user-stories/US-<domaine>-<slug>.md`, rendu inline, ou les deux
-- **Agent `us-writer`** — Un Product Owner senior virtuel, rigoureux, qui rédige l'US en suivant à la lettre le template du plugin. Lit la codebase avant d'écrire (jamais de comportement supposé), marque toute hypothèse `[HYPOTHÈSE]`, et liste les questions ouvertes en fin d'US.
-- **Template d'US figé** — Structure imposée : Titre `[Domaine] Verbe + Complément` / Description En tant que… / Contexte & Règles métier (avec sous-bloc « Comportement actuel observé dans la codebase ») / Critères d'acceptance Gherkin (nominal + alternatifs + erreurs + bords) / Spécifications techniques / Maquettes / Dépendances / Scope IN-OUT / Estimation en story points / Questions ouvertes.
+- **Slash command `/write-us-from-brief`** — US à partir d'un brief, **sans accès à la codebase**. Flow en 4 phases :
+  1. **Cadrage** — Reformulation du besoin (pas de forward / reverse : toujours prospectif)
+  2. **Acquisition & lecture des sources** — Texte collé inline, description de maquette / UI, fichier local (`.md` / `.txt` / `.pdf`), ou URL de doc externe (Notion, Confluence…) récupérée via `WebFetch`
+  3. **Rédaction** — Délégation à l'agent `us-drafter` avec la synthèse des sources
+  4. **Sortie** — Écriture dans `docs/user-stories/US-<domaine>-<slug>.md`, rendu inline (défaut en cowork), ou les deux
+- **Agent `us-writer`** — Product Owner senior virtuel qui **lit la codebase** avant d'écrire (jamais de comportement supposé), suit à la lettre le template, marque toute hypothèse `[HYPOTHÈSE]` et liste les questions ouvertes.
+- **Agent `us-drafter`** — Le pendant « sans code » : même rigueur, mais rédige à partir des seules sources fournies. Ne présume jamais d'un comportement système que le brief n'affirme pas ; le moindre trou du brief devient une question ouverte plutôt qu'une invention.
+- **Template d'US figé (partagé par les deux commandes)** — Structure imposée : Titre `[Domaine] Verbe + Complément` / Description En tant que… / Contexte & Règles métier (avec, selon l'origine, un sous-bloc « Comportement actuel observé dans la codebase » **ou** « Sources analysées ») / Critères d'acceptance Gherkin (nominal + alternatifs + erreurs + bords) / Spécifications techniques / Maquettes / Dépendances / Scope IN-OUT / Estimation en story points / Questions ouvertes.
 
-**Quand l'utiliser** — Avant de démarrer une feature pour formaliser la spec, ou pour rattraper la documentation d'une feature existante.
+**Quand l'utiliser** — `/write-us-from-code` avant de démarrer une feature sur un repo existant, ou pour rattraper la doc d'une feature en place. `/write-us-from-brief` en amont (PO/PM sans code sous la main), en Claude cowork, ou pour formaliser une maquette / un compte-rendu de réunion en spec.
 
 ### [`pr-reviewer`](./plugins/pr-reviewer)
 
@@ -179,13 +190,17 @@ flegars-claude-code-marketplace/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   ├── agents/
-│   │   │   └── us-writer.md
+│   │   │   ├── us-writer.md      # US ancrée dans le code
+│   │   │   └── us-drafter.md     # US à partir d'un brief (sans code)
 │   │   └── skills/
-│   │       └── write-us-from-code/
+│   │       ├── write-us-from-code/
+│   │       │   ├── SKILL.md
+│   │       │   ├── metadata.json
+│   │       │   └── references/
+│   │       │       └── us-template.md   # template figé partagé par les deux skills
+│   │       └── write-us-from-brief/
 │   │           ├── SKILL.md
-│   │           ├── metadata.json
-│   │           └── references/
-│   │               └── us-template.md
+│   │           └── metadata.json
 │   ├── pr-reviewer/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
