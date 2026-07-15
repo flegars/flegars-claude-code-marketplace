@@ -44,12 +44,18 @@ Section détaillant :
 - Les contraintes réglementaires éventuelles
 - Les définitions des termes métier utilisés (glossaire si nécessaire)
 
-Si l'US est dérivée de la codebase, inclure un sous-bloc :
+Selon l'origine de l'US, inclure **l'un** des sous-blocs suivants (jamais les deux) pour ancrer la spec dans ses sources :
 
-### Comportement actuel observé dans la codebase
+### Comportement actuel observé dans la codebase *(si l'US est dérivée du code existant)*
 - Fichiers analysés : `path/to/file.php:42`, `path/to/other.php`
 - Comportement existant résumé en quelques lignes
 - Gap fonctionnel à combler par cette US (ce qui manque ou doit changer)
+
+### Sources analysées *(si l'US est dérivée d'un brief : maquette, recueil de besoin, notes, doc externe — sans accès à la codebase)*
+- Sources exploitées : ex. « maquette écran de création société », « résumé du recueil de besoin métier », « notes de réunion du 2026-07-10 », « doc Notion <URL> »
+- Éléments concrets retenus de chaque source (champs, écrans, règles, contraintes cités)
+- Besoin / gap à combler par cette US, tel qu'il ressort des sources
+- Zones où les sources sont muettes → à reporter en « Questions ouvertes » plutôt qu'à deviner
 
 ---
 

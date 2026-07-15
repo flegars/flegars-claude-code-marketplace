@@ -1,0 +1,13 @@
+{
+  "name": "write-us-from-brief",
+  "displayName": "Write US From Brief",
+  "description": "Rédige une User Story standardisée à partir d'un brief externe (recueil de besoin, maquette, fichier, URL), sans accès à la codebase",
+  "version": "0.1.0",
+  "author": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "tags": ["user-story", "spec", "brief", "mockup", "product-owner", "documentation", "cowork"],
+  "category": "Productivity",
+  "updatedAt": "2026-07-15"
+}
