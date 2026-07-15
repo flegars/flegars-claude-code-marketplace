@@ -24,7 +24,7 @@ Puis installer un plugin :
 
 ## Plugins disponibles
 
-### [`codebase-to-us`](./plugins/codebase-to-us)
+### [`us-writer`](./plugins/us-writer)
 
 > Rédige des User Stories standardisées suivant un template figé — à partir de la codebase **ou** d'un brief externe quand le code n'est pas disponible.
 
@@ -44,7 +44,7 @@ Les deux commandes produisent des US suivant **systématiquement** la même stru
   4. **Sortie** — Écriture dans `docs/user-stories/US-<domaine>-<slug>.md`, rendu inline, ou les deux
 - **Slash command `/write-us-from-brief`** — US à partir d'un brief, **sans accès à la codebase**. Flow en 4 phases :
   1. **Cadrage** — Reformulation du besoin (pas de forward / reverse : toujours prospectif)
-  2. **Acquisition & lecture des sources** — Texte collé inline, description de maquette / UI, fichier local (`.md` / `.txt` / `.pdf`), ou URL de doc externe (Notion, Confluence…) récupérée via `WebFetch`
+  2. **Acquisition & lecture des sources** — Texte collé inline, description de maquette / UI, fichier local (`.md` / `.txt` / `.pdf`), URL de doc externe (Notion, Confluence…) récupérée via `WebFetch`, ou une **ancienne US à mettre à jour** (réécrite intégralement au format figé). Argument passé au slash command (`$ARGUMENTS`) auto-détecté : chemin / URL / texte
   3. **Rédaction** — Délégation à l'agent `us-drafter` avec la synthèse des sources
   4. **Sortie** — Écriture dans `docs/user-stories/US-<domaine>-<slug>.md`, rendu inline (défaut en cowork), ou les deux
 - **Agent `us-writer`** — Product Owner senior virtuel qui **lit la codebase** avant d'écrire (jamais de comportement supposé), suit à la lettre le template, marque toute hypothèse `[HYPOTHÈSE]` et liste les questions ouvertes.
@@ -186,7 +186,7 @@ flegars-claude-code-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json     # Manifest de la marketplace
 ├── plugins/
-│   ├── codebase-to-us/
+│   ├── us-writer/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   ├── agents/

@@ -1,5 +1,5 @@
 {
-  "name": "codebase-to-us",
+  "name": "us-writer",
   "description": "Rédige des User Stories standardisées suivant un template figé, soit à partir de l'analyse de la codebase, soit à partir d'un brief externe (recueil de besoin, maquette, doc) sans accès au code",
   "version": "0.2.0",
   "author": {

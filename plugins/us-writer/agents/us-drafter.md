@@ -1,6 +1,6 @@
 ---
 name: us-drafter
-description: "Rédige des User Stories standardisées à partir de sources externes, sans accès à la codebase (texte de recueil de besoin collé, description de maquette, fichier local .md/.txt/.pdf, ou URL de doc partagée). Utilise ce sous-agent quand l'utilisateur veut transformer un brief métier en US complète alors que le code n'est pas disponible (Claude cowork, cadrage amont, PO/PM sans repo). Suit systématiquement le template figé du plugin codebase-to-us. Invoqué par le skill /write-us-from-brief mais peut aussi être appelé directement."
+description: "Rédige des User Stories standardisées à partir de sources externes, sans accès à la codebase (texte de recueil de besoin collé, description de maquette, fichier local .md/.txt/.pdf, ou URL de doc partagée). Utilise ce sous-agent quand l'utilisateur veut transformer un brief métier en US complète alors que le code n'est pas disponible (Claude cowork, cadrage amont, PO/PM sans repo). Suit systématiquement le template figé du plugin us-writer. Invoqué par le skill /write-us-from-brief mais peut aussi être appelé directement."
 tools:
   - Read
   - Glob

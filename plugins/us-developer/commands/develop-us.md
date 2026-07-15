@@ -222,7 +222,7 @@ Si **un seul** critère est non couvert sans justification explicite, le marquer
 - **Langue** : tout en français (rapports, gates, questions). Termes techniques en anglais quand standards (issue, PR, work item, payload, endpoint, idempotence, lint...).
 - **Pas de gold-plating** : si une décision « rendrait le code mieux » mais n'est pas demandée par l'US, elle n'est **pas** prise. Elle peut être notée dans `🐞 Bugs hors-périmètre repérés` ou dans `🧠 Journal des hypothèses` si elle a une conséquence visible.
 - **Pas de devinette silencieuse** : tout ce qui n'est pas dans l'US et qui apparaît dans le code → journal des hypothèses.
-- **Une seule US par invocation** : si la source contient en réalité plusieurs sujets (epic), s'arrêter au gate clarification et proposer un découpage (potentiellement via le plugin `codebase-to-us`).
+- **Une seule US par invocation** : si la source contient en réalité plusieurs sujets (epic), s'arrêter au gate clarification et proposer un découpage (potentiellement via le plugin `us-writer`).
 - **Pas d'écriture prématurée** : avant le gate de validation (étape 5), **aucun fichier source du repo n'est modifié**. Les seules actions autorisées sont des lectures et des commandes en mode read-only.
 - **Modifications de code hors périmètre interdites**, même cosmétiques. Tout findng latéral va dans le rapport.
 
