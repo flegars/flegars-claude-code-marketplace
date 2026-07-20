@@ -1,0 +1,10 @@
+{
+  "name": "split-us-into-tasks",
+  "displayName": "Split US Into Tasks",
+  "description": "Découpe une User Story rédigée en tasks atomiques et propose systématiquement de les enregistrer dans Azure DevOps, rattachées à l'US parente",
+  "version": "0.1.0",
+  "author": { "name": "Florian Legars", "email": "legars.florian@gmail.com" },
+  "tags": ["user-story", "task", "breakdown", "azure-devops", "planning", "product-owner"],
+  "category": "Productivity",
+  "updatedAt": "2026-07-20"
+}
