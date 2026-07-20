@@ -14,12 +14,12 @@
     {
       "name": "us-writer",
       "source": "./plugins/us-writer",
-      "description": "Rédige des User Stories standardisées suivant un template figé, soit à partir de l'analyse de la codebase, soit à partir d'un brief externe (recueil de besoin, maquette, doc) sans accès au code",
-      "version": "0.2.0",
+      "description": "Rédige des User Stories standardisées suivant un template figé (à partir de la codebase ou d'un brief externe) et découpe une US en tasks avec enregistrement dans Azure DevOps",
+      "version": "0.3.0",
       "author": {
         "name": "Florian Legars"
       },
-      "keywords": ["user-story", "spec", "codebase", "brief", "mockup", "product-owner", "documentation"],
+      "keywords": ["user-story", "spec", "codebase", "brief", "mockup", "product-owner", "documentation", "task", "breakdown", "azure-devops"],
       "category": "productivity"
     },
     {
