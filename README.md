@@ -123,23 +123,23 @@ Les deux commandes de rédaction produisent des US suivant **systématiquement**
 
 ### [`daily-activity`](./plugins/daily-activity)
 
-> Récapitule l'activité Azure DevOps de l'utilisateur courant sur les dernières 24 heures glissantes.
+> Récapitule l'activité GitHub de l'utilisateur courant sur les dernières 24 heures glissantes.
 
-**À quoi ça sert** — Préparer son daily, retrouver ce sur quoi on a touché avant un changement de contexte, ou auditer ses propres traces. Le plugin agrège **Pull Requests** (créées / mergées / commentées / en attente de review), **commits**, **work items** (créés / changés / commentés) et **threads de PR** (commentaires postés + réponses reçues). Source primaire : la **CLI `az`** avec l'extension `azure-devops` (org `INTERINVEST` par défaut). **Fallback** sur le MCP `devops` si `az` n'est pas installé / non authentifié. Read-only par construction (`list` / `show` / `query` / `az rest --method get` uniquement) : aucune écriture côté ADO.
+**À quoi ça sert** — Préparer son daily, retrouver ce sur quoi on a touché avant un changement de contexte, ou auditer ses propres traces. Le plugin agrège **Pull Requests** (créées / mergées / reviewées / commentées / en attente de review), **commits**, **issues** (créées / fermées / commentées) et **threads de review** (commentaires postés + réponses reçues). Source unique : la **CLI `gh`** — recherche globale (`gh search prs|commits|issues`), API REST (`gh api`) et **feed d'événements utilisateur** (`/users/<login>/events`) comme socle de collecte. Read-only par construction (`gh search`, `gh api` en GET, `git log`) : aucune écriture côté GitHub.
 
 **Ce que ça apporte :**
 
-- **Slash command `/daily-activity [--hours=N] [--project=<name>] [--org=<org>] [--save]`** — Orchestre un flow en 4 phases :
-  1. **Préparation** — Calcul de la fenêtre `now − N heures`, sélection de la source (`az` → MCP fallback), résolution de `@me`
-  2. **Collecte multi-projets** — Pour chaque projet de l'org : PRs (`az repos pr list --creator/--reviewer`), commits (`az rest` sur `_apis/git/repositories/.../commits`), work items (`az boards query --wiql`), threads PR (`az rest` sur `.../pullRequests/<id>/threads`), groupés en parallèle quand possible
-  3. **Filtrage côté client** — Re-filtrage strict sur la fenêtre `[since, now]` pour garantir la cohérence, déduplication des PRs croisées
+- **Slash command `/daily-activity [--hours=N] [--repo=<owner/name>] [--org=<org>] [--host=<hostname>] [--save]`** — Orchestre un flow en 4 phases :
+  1. **Préparation** — Calcul de la fenêtre `now − N heures`, vérification de `gh` (binaire / auth / scopes / quota API), résolution de l'identité (`gh api user`)
+  2. **Collecte** — Feed d'événements comme socle (`PushEvent`, `PullRequestEvent`, `PullRequestReviewEvent`, `IssueCommentEvent`…), croisé avec les recherches ciblées (`--author=@me`, `--reviewed-by=@me`, `--review-requested=@me`, `--commenter=@me`) et les threads de review (`/pulls/<n>/comments`, `/reviews`)
+  3. **Filtrage côté client** — Re-filtrage strict sur la fenêtre `[since, now]` (les qualifiers de recherche s'appliquent à la journée et à la dernière mise à jour globale, pas à l'action précise), déduplication des PRs croisées
   4. **Restitution** — Rapport markdown inline (par défaut) ou sauvegarde dans `daily-activity/YYYY-MM-DD.md` avec `--save`
-- **Format de rapport figé** — Structure imposée : en-tête (fenêtre, org, utilisateur, projets scannés, source utilisée) / **📊 Résumé** chiffré / **🟢 Pull Requests** groupées par type d'implication / **📝 Commits** groupés par repo / **🎯 Work Items** par type d'action / **💬 Threads PR** (postés + réponses à traiter) / **⏱️ Timeline chronologique inversée** / **⚠️ Limitations** explicites si collecte partielle.
-- **Robustesse** — Bascule automatique `az → MCP` si la CLI n'est pas opérationnelle (binaire / extension / auth / accès org), tolérance aux échecs partiels (un projet inaccessible n'arrête pas le flow, il est listé dans `⚠️ Limitations`), troncature à 200 caractères des extraits de commentaires, masquage automatique des secrets détectés, fallback explicite pour les commits si l'endpoint REST ne répond pas (dérivation depuis les PRs).
+- **Format de rapport figé** — Structure imposée : en-tête (fenêtre, compte + hôte, périmètre) / **📊 Résumé** chiffré / **🟢 Pull Requests** groupées par type d'implication / **📝 Commits** groupés par dépôt / **🎯 Issues** par type d'action / **💬 Threads de review** (postés + réponses à traiter) / **⏱️ Timeline chronologique inversée** / **⚠️ Limitations** explicites si collecte partielle.
+- **Robustesse** — Garde-fou multi-comptes (`gh auth status` : le rapport ne reflète que le compte actif, rappelé dans l'en-tête pour éviter le faux rapport vide sur un compte perso/pro EMU), garde-fou coût sur le quota API (`gh api rate_limit`), tolérance aux échecs partiels (un dépôt inaccessible n'arrête pas le flow, il est listé dans `⚠️ Limitations`), troncature à 200 caractères des extraits de commentaires, masquage automatique des secrets détectés, chaîne de fallback explicite pour les commits (feed d'événements → `gh search commits`, qui n'indexe que la branche par défaut → `git log` local).
 
-**Quand l'utiliser** — Le matin avant le daily standup, le soir avant de fermer la machine, ou n'importe quand pour répondre à « qu'est-ce que j'ai poussé hier ? ». Particulièrement utile après un context-switch entre plusieurs projets.
+**Quand l'utiliser** — Le matin avant le daily standup, le soir avant de fermer la machine, ou n'importe quand pour répondre à « qu'est-ce que j'ai poussé hier ? ». Particulièrement utile après un context-switch entre plusieurs dépôts.
 
-**Pré-requis** — `az` CLI installé (`brew install azure-cli`) + extension `azure-devops` (`az extension add --name azure-devops`) + authentification (`az login` puis `az devops login --org https://dev.azure.com/<org>`). Si l'un manque, le plugin bascule automatiquement sur le MCP `devops`.
+**Pré-requis** — GitHub CLI installé (`brew install gh`) et authentifié (`gh auth login`), avec au minimum le scope `repo` (et `read:org` pour `--org`). En multi-comptes, vérifier le compte actif avec `gh auth status` et basculer avec `gh auth switch --user <login>`. Pour une instance GitHub Enterprise, passer `--host=<hostname>`.
 
 ### [`audit-codebase`](./plugins/audit-codebase)
 
