@@ -1,22 +1,21 @@
 ---
 name: daily-activity
-description: "Récapitule l'activité Azure DevOps de l'utilisateur courant sur les dernières 24 heures glissantes : Pull Requests, commits, work items, threads de PR. Source primaire = `az` CLI (extension `azure-devops`) ; fallback = MCP `devops` si `az` indisponible. Orchestre un flow en 4 phases : préparation (fenêtre 24h, vérification source, résolution `@me`) → collecte multi-projets → filtrage par fenêtre temporelle → restitution (résumé groupé par type + timeline chronologique inversée). Déclencher quand l'utilisateur dit : /daily-activity, 'qu'est-ce que j'ai fait aujourd'hui sur ADO', 'mon activité ADO 24h', 'recap ado', 'standup ado', 'prépare mon daily'."
+description: "Récapitule l'activité GitHub de l'utilisateur courant sur les dernières 24 heures glissantes : Pull Requests, commits, issues, threads de review. Source unique = `gh` CLI (`gh search`, `gh api`, feed d'événements). Orchestre un flow en 4 phases : préparation (fenêtre 24h, vérification de `gh`, résolution de l'identité) → collecte (recherche globale + feed d'événements) → filtrage par fenêtre temporelle → restitution (résumé groupé par type + timeline chronologique inversée). Déclencher quand l'utilisateur dit : /daily-activity, 'qu'est-ce que j'ai fait aujourd'hui sur GitHub', 'mon activité GitHub 24h', 'recap github', 'standup', 'prépare mon daily'."
 user_invocable: true
 ---
 
-# Daily Activity (Azure DevOps)
+# Daily Activity (GitHub)
 
-Produit un récapitulatif **standardisé** de l'activité de l'utilisateur courant sur Azure DevOps pour les **dernières 24 heures glissantes** (fenêtre `now − 24h` → `now`).
+Produit un récapitulatif **standardisé** de l'activité de l'utilisateur courant sur GitHub pour les **dernières 24 heures glissantes** (fenêtre `now − 24h` → `now`).
 
-**Source primaire** : `az` CLI avec l'extension `azure-devops` (org `INTERINVEST` par défaut).
-**Fallback** : MCP `devops` configuré dans `~/.claude/config.json` — utilisé uniquement si `az` est absent / non authentifié / si l'extension `azure-devops` n'est pas installée.
+**Source** : `gh` CLI (GitHub CLI) — `gh search`, `gh api` (REST + GraphQL), feed d'événements utilisateur.
 
-Cas d'usage typique : préparer son daily, retrouver ce sur quoi on a touché avant un changement de contexte, auditer ses propres traces. **Read-only** : aucune écriture côté ADO (uniquement `az ... list/show/query` et `az rest --method get`).
+Cas d'usage typique : préparer son daily, retrouver ce sur quoi on a touché avant un changement de contexte, auditer ses propres traces. **Read-only** : uniquement des lectures (`gh search`, `gh pr list`, `gh api --method GET`). Aucune écriture côté GitHub.
 
 ## Vue d'ensemble du flow
 
-1. **Préparation** — Calculer la fenêtre, sélectionner la source (az → MCP fallback), résoudre l'identité `@me`
-2. **Collecte** — Pour chaque projet de l'org, agréger PRs / commits / work items / threads
+1. **Préparation** — Calculer la fenêtre, vérifier `gh` (binaire / auth / compte actif), résoudre l'identité
+2. **Collecte** — Agréger PRs / commits / issues / threads de review via recherche globale + feed d'événements
 3. **Filtrage** — Ne garder que les événements dans la fenêtre 24h
 4. **Restitution** — Rapport markdown : résumé groupé + timeline chronologique inversée
 
@@ -25,15 +24,16 @@ Cas d'usage typique : préparer son daily, retrouver ce sur quoi on a touché av
 ## Arguments du slash command
 
 ```
-/daily-activity [--hours=N] [--project=<project>] [--org=<org>] [--save]
+/daily-activity [--hours=N] [--repo=<owner/name>] [--org=<org>] [--host=<hostname>] [--save]
 ```
 
 - `--hours=N` (optionnel) — Étend ou raccourcit la fenêtre glissante (défaut : `24`). Exemple : `--hours=48` pour un récap week-end.
-- `--project=<project>` (optionnel) — Restreint la collecte à un seul projet ADO au lieu de scanner toute l'org. Match par nom exact (insensible à la casse) ou par id.
-- `--org=<org>` (optionnel) — Surcharge l'org cible (défaut : `INTERINVEST`). Accepter le nom court ou l'URL complète `https://dev.azure.com/<org>`.
+- `--repo=<owner/name>` (optionnel) — Restreint la collecte à un seul dépôt (`org/repo`). Cumulable : `--repo=a/b --repo=c/d`.
+- `--org=<org>` (optionnel) — Restreint la collecte aux dépôts d'une organisation (qualifier `org:<org>` dans les recherches).
+- `--host=<hostname>` (optionnel) — Cible une instance GitHub Enterprise (défaut : `github.com`). Propagé via `--hostname` / `GH_HOST`.
 - `--save` (optionnel) — Force la sauvegarde du rapport dans `daily-activity/YYYY-MM-DD.md`.
 
-Aucun argument n'est obligatoire. Le mode par défaut = 24h, toute l'org INTERINVEST, sortie inline.
+Aucun argument n'est obligatoire. Le mode par défaut = 24h, toute l'activité visible par le compte authentifié, sortie inline.
 
 ---
 
@@ -41,219 +41,244 @@ Aucun argument n'est obligatoire. Le mode par défaut = 24h, toute l'org INTERIN
 
 ### 1.1 Calculer la fenêtre temporelle
 
-- `now` = timestamp courant UTC (ISO 8601).
-- `since` = `now − N heures` où `N` = valeur de `--hours` ou `24`.
-- Conserver ces deux bornes — toutes les comparaisons ultérieures se font dessus.
+- `NOW_ISO` = timestamp courant UTC (ISO 8601, ex. `2026-09-02T08:00:00Z`).
+- `SINCE_ISO` = `now − N heures` où `N` = valeur de `--hours` ou `24`.
+- `SINCE_DATE` = date seule (`YYYY-MM-DD`) dérivée de `SINCE_ISO` — utile car certains qualifiers de recherche GitHub sont plus fiables à la journée qu'à la seconde.
 
-### 1.2 Sélectionner la source (az CLI → MCP fallback)
-
-**Tester la source primaire `az` CLI** dans cet ordre, **arrêter au premier échec et basculer en fallback MCP** :
-
-1. Binaire disponible : `command -v az` (échoue si Azure CLI n'est pas installé)
-2. Extension installée : `az extension show --name azure-devops` (échoue si l'extension n'est pas installée)
-3. Authentification valide : `az account show --query user.name -o tsv` (échoue si non connecté)
-4. Org joignable : `az devops project list --org https://dev.azure.com/<org> --query "value[0].name" -o tsv` (échoue si l'org est inaccessible ou le PAT/login n'a pas les droits)
-
-**Si toutes les étapes 1-4 passent → mode `az`** (variable interne `source=az`).
-
-**Si l'une échoue → fallback MCP `devops`** :
-- Vérifier qu'au moins un tool `mcp__*devops*__*` est exposé dans la session.
-- Si oui → mode `mcp` (variable interne `source=mcp`), et signaler à l'utilisateur dans le rapport final, section `⚠️ Limitations` : « Source utilisée : MCP `devops` (fallback) — la CLI `az` n'était pas opérationnelle. Détail : <message d'erreur de l'étape qui a échoué>. »
-- Si non → **stopper le flow** avec ce message :
-  ```
-  Aucune source ADO disponible :
-  - `az` CLI : <raison>
-  - MCP `devops` : non exposé dans cette session
-  Installe `az` + l'extension `azure-devops` (`az extension add --name azure-devops`)
-  et connecte-toi (`az login` + `az devops login --org https://dev.azure.com/<org>`),
-  ou vérifie `~/.claude/config.json` pour le MCP.
-  ```
-
-**Pour fixer les defaults `az` après détection** (uniquement en mode `az`) :
 ```bash
-az devops configure --defaults organization=https://dev.azure.com/<org>
+NOW_ISO=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+SINCE_ISO=$(date -u -v-24H +%Y-%m-%dT%H:%M:%SZ)   # macOS ; GNU : date -u -d '24 hours ago' ...
+SINCE_DATE=${SINCE_ISO%%T*}
 ```
-Cette ligne évite de répéter `--org` à chaque appel, mais elle est **optionnelle** : tous les appels qui suivent passent quand même `--org` explicitement pour rester reproductibles.
 
-### 1.3 Résoudre l'identité `@me`
+Conserver ces bornes — toutes les comparaisons ultérieures se font dessus.
 
-**Mode `az`** :
+### 1.2 Vérifier la source `gh`
+
+Tester dans cet ordre, **s'arrêter au premier échec** :
+
+1. Binaire disponible : `command -v gh`
+2. Authentification valide : `gh auth status` (afficher la sortie, elle liste les comptes et le compte actif)
+3. Scopes suffisants : la sortie de `gh auth status` doit mentionner au minimum `repo` (et `read:org` si `--org` est utilisé). Si `repo` manque, signaler que l'activité sur dépôts privés sera invisible et le noter dans `⚠️ Limitations`.
+4. API joignable : `gh api rate_limit --jq '.rate.remaining'` (échoue si réseau / token invalide ; sert aussi de garde-fou coût, cf. 2.6)
+
+**Si une étape échoue → stopper le flow** avec ce message :
+
+```
+Source GitHub indisponible :
+- `gh` CLI : <raison>
+Installe GitHub CLI (`brew install gh`) puis authentifie-toi (`gh auth login`).
+Si tu as plusieurs comptes (perso / pro), vérifie le compte actif avec `gh auth status`
+et bascule si besoin avec `gh auth switch --user <login>`.
+```
+
+> ⚠️ **Multi-comptes** : `gh` peut être authentifié sur plusieurs comptes (perso + pro/EMU). Le rapport ne reflète que le **compte actif**. Si `gh auth status` en liste plusieurs, indiquer explicitement dans l'en-tête du rapport lequel a été utilisé, et le rappeler dans `⚠️ Limitations` si l'activité semble anormalement vide.
+
+### 1.3 Résoudre l'identité
+
 ```bash
-EMAIL=$(az account show --query user.name -o tsv)
-az devops user show --user "$EMAIL" --org https://dev.azure.com/<org> -o json
+LOGIN=$(gh api user --jq .login)
+gh api user --jq '{login, name, id, html_url}'
 ```
-- Conserver `uniqueName` (email), `displayName`, `descriptor`, `id`.
-- Si `az devops user show` n'est pas disponible (ancienne version d'extension), se rabattre sur `$EMAIL` seul et le passer en `--creator` / `--reviewer` aux étapes suivantes.
 
-**Mode `mcp`** :
-- Appeler le tool MCP qui retourne l'utilisateur authentifié (`core_get_identity_ids` / `user_get_authenticated` / équivalent).
-- Conserver les mêmes champs.
+- Conserver `login`, `name`, `id`, `html_url`.
+- `@me` est résolu côté serveur dans les qualifiers de recherche (`--author=@me`) — pas besoin de l'interpoler, mais `$LOGIN` reste nécessaire pour le feed d'événements et le filtrage côté client.
 
 Si la résolution échoue : afficher l'erreur brute et stopper.
 
-### 1.4 Lister les projets cibles
+### 1.4 Déterminer le périmètre
 
-**Si `--project` est fourni** :
-- Mode `az` : `az devops project show --project "<project>" --org <url> -o json` (match par nom ou id).
-- Mode `mcp` : équivalent (`core_get_project` / `core_list_projects` + match).
-- Si introuvable, demander via `AskUserQuestion` une correction parmi les projets disponibles.
+Construire un **suffixe de qualifiers** réutilisé par toutes les recherches :
 
-**Sinon** :
-- Mode `az` : `az devops project list --org <url> --query "value[].{id:id,name:name}" -o json`
-- Mode `mcp` : `core_list_projects` équivalent.
-- Conserver `id` et `name` pour chaque projet actif.
+- `--repo` fourni → qualifier positionnel `repo:<owner/name>` passé en argument de `gh search` (répétable : `gh search prs 'repo:a/b repo:c/d' --author=@me`). `gh search` n'a **pas** de flag `--repo`.
+- `--org` fourni → flag `--owner=<org>` sur `gh search` (répétable).
+- Ni l'un ni l'autre → aucun filtre : toute l'activité visible par le compte authentifié.
+
+Vérifier qu'un `--repo` fourni existe et est lisible :
+```bash
+gh repo view <owner/name> --json nameWithOwner,visibility
+```
+Si introuvable, demander une correction via `AskUserQuestion` (proposer les dépôts récents de l'utilisateur : `gh repo list --limit 20`).
 
 ---
 
-## Phase 2 — Collecte par projet
+## Phase 2 — Collecte
 
-Pour **chaque projet retenu en Phase 1**, exécuter les sous-étapes ci-dessous **en parallèle quand c'est possible** (un groupe d'appels par projet, en un seul tour de tool calls).
+Exécuter les sous-étapes ci-dessous **en parallèle quand c'est possible** (un seul tour de tool calls).
 
-L'objectif n'est pas d'être exhaustif sur les noms exacts des commandes — utiliser les capacités équivalentes exposées par la source au moment de l'exécution. Si une capacité manque, le signaler dans le rapport final dans une section `⚠️ Limitations`.
+L'objectif n'est pas d'être exhaustif sur les noms exacts des commandes — utiliser les capacités équivalentes exposées par `gh` au moment de l'exécution. Si une capacité manque, le signaler dans le rapport final dans une section `⚠️ Limitations`.
 
-> **Toutes les commandes `az` ci-dessous sont read-only** (`list`, `show`, `query`, `az rest --method get`). Aucune commande mutante ne doit être lancée par ce skill.
+> **Toutes les commandes ci-dessous sont read-only** (`gh search`, `gh pr list`, `gh api` en GET). Aucune commande mutante ne doit être lancée par ce skill.
 
-### 2.1 Pull Requests
+### 2.1 Feed d'événements (socle de la collecte)
 
-**Mode `az`** :
+Le feed d'événements de l'utilisateur est la source la plus complète pour une fenêtre courte : il couvre les push, ouvertures/merges de PR, reviews, commentaires et issues, **y compris sur dépôts privés** quand le token porte le scope `repo`.
 
-PRs créées par moi (sur la fenêtre) :
 ```bash
-az repos pr list \
-  --org https://dev.azure.com/<org> --project "<project>" \
-  --creator "$EMAIL" \
-  --status all \
-  --output json
+gh api "/users/$LOGIN/events?per_page=100" --paginate --jq \
+  '.[] | select(.created_at >= "'"$SINCE_ISO"'") |
+   {type, created_at, repo: .repo.name, payload}'
 ```
 
-PRs où je suis reviewer :
+Types d'événements à exploiter :
+
+| Type | Alimente |
+|---|---|
+| `PushEvent` | Commits (`payload.commits[]` : `sha`, `message`, `author`) |
+| `PullRequestEvent` | PRs ouvertes / fermées / mergées (`payload.action`, `payload.pull_request`) |
+| `PullRequestReviewEvent` | Reviews postées (`payload.review.state` : approved / changes_requested / commented) |
+| `PullRequestReviewCommentEvent` | Commentaires de review inline (`payload.comment.path`, `.line`, `.body`) |
+| `IssuesEvent` | Issues ouvertes / fermées / réassignées |
+| `IssueCommentEvent` | Commentaires sur issue ou PR |
+| `CreateEvent` / `DeleteEvent` | Branches créées / supprimées (contexte utile, section optionnelle) |
+
+Limites connues à noter dans `⚠️ Limitations` si pertinent :
+- Le feed ne remonte que les **300 derniers événements** / **90 derniers jours** — sans impact à 24h sauf activité très intense.
+- Il peut accuser un **retard de quelques minutes** sur les événements les plus récents.
+- Les événements sur dépôts privés d'une **organisation EMU** peuvent être absents selon la politique de l'org → croiser systématiquement avec 2.2–2.5.
+
+### 2.2 Pull Requests
+
+PRs créées par moi et mises à jour dans la fenêtre :
 ```bash
-az repos pr list \
-  --org https://dev.azure.com/<org> --project "<project>" \
-  --reviewer "$EMAIL" \
-  --status all \
-  --output json
+gh search prs --author=@me --updated=">=$SINCE_DATE" --limit 100 \
+  --json number,title,repository,url,state,isDraft,createdAt,updatedAt,closedAt
 ```
 
-Pour chaque PR retournée :
-- Refiltrer côté client sur la fenêtre via `creationDate`, `closedDate`, `lastMergeCommit.committer.date`.
-- Détailler si nécessaire : `az repos pr show --id <id> --org <url>` pour récupérer `lastMergeCommit` et le statut courant.
+PRs mergées par moi :
+```bash
+gh search prs --author=@me --merged-at=">=$SINCE_DATE" --limit 100 \
+  --json number,title,repository,url,closedAt
+```
 
-**Mode `mcp`** : utiliser les tools équivalents (`repo_list_pull_requests_by_creator`, `repo_list_pull_requests_by_reviewer`, etc.).
+PRs où j'ai été demandé en review :
+```bash
+gh search prs --review-requested=@me --state=open --limit 100 \
+  --json number,title,repository,url,author,createdAt,updatedAt
+```
+
+PRs que j'ai reviewées ou commentées :
+```bash
+gh search prs --reviewed-by=@me --updated=">=$SINCE_DATE" --limit 100 --json number,title,repository,url,author,updatedAt
+gh search prs --commenter=@me  --updated=">=$SINCE_DATE" --limit 100 --json number,title,repository,url,author,updatedAt
+```
+
+Ajouter le qualifier positionnel `repo:<owner/name>` ou le flag `--owner=<org>` selon le périmètre de 1.4.
+
+> `--updated` filtre la **dernière mise à jour** de la PR, pas l'action précise : refiltrer côté client (Phase 3) en croisant avec le feed d'événements pour savoir **ce que j'ai fait** et **quand**.
+>
+> Sur une PR ouverte, `closedAt` vaut la sentinelle `0001-01-01T00:00:00Z` (et non `null`) — la traiter comme « non fermée », jamais comme une date.
+>
+> `state` vaut `open`, `closed` **ou `merged`** dans la sortie de `gh search prs` : ne pas déduire le merge de `closed`.
 
 Pour chaque PR, conserver :
-- `pullRequestId`, `title`, `repository.name`, `sourceRefName → targetRefName`
-- `status` (`active` / `completed` / `abandoned`)
-- `creationDate`, `closedDate` (si présent), `lastMergeCommit.committer.date`
-- `url` web reconstruite : `https://dev.azure.com/<org>/<project>/_git/<repo>/pullrequest/<id>`
-- Booléens : `j'ai créé`, `j'ai mergé`, `j'ai commenté` (dépend de 2.4), `je suis reviewer`
+- `number`, `title`, `repository.nameWithOwner`, `url`
+- `state` (`open` / `closed` / `merged`), `isDraft`
+- `createdAt`, `updatedAt`, `closedAt`, date de merge si disponible
+- Booléens : `j'ai créé`, `j'ai mergé`, `j'ai reviewé`, `j'ai commenté`, `je suis reviewer demandé`
 
-### 2.2 Commits
-
-`az` n'expose **pas** de commande native pour lister les commits d'un repo. Deux stratégies, dans cet ordre :
-
-**A. Via `az rest` (recommandé en mode `az`)** :
-
-Lister les repos du projet :
+Détail sur une PR précise si nécessaire :
 ```bash
-az repos list --org <url> --project "<project>" --query "[].{id:id,name:name}" -o json
+gh pr view <number> --repo <owner/name> \
+  --json number,title,url,state,mergedAt,mergedBy,headRefName,baseRefName,commits,reviews
 ```
 
-Pour chaque repo, requêter les commits filtrés par auteur et date côté serveur :
+### 2.3 Commits
+
+**A. Depuis le feed d'événements (recommandé)** — `PushEvent.payload.commits[]` donne `sha`, `message`, `author.email`, et `repo.name`. C'est la source la plus fiable, y compris hors branche par défaut.
+
+Reconstruire l'URL : `https://<host>/<owner/repo>/commit/<sha>`.
+
+**B. Complément : recherche de commits**
 ```bash
-az rest --method get \
-  --url "https://dev.azure.com/<org>/<project>/_apis/git/repositories/<repoId>/commits" \
-  --url-parameters \
-    "searchCriteria.author=$EMAIL" \
-    "searchCriteria.fromDate=$SINCE_ISO" \
-    "searchCriteria.toDate=$NOW_ISO" \
-    "api-version=7.1"
+gh search commits --author=@me --author-date=">=$SINCE_DATE" --limit 100 \
+  --json sha,commit,repository,url
 ```
 
-Conserver : `commitId` (court 7 chars), `comment` (1re ligne uniquement), `<repo>`, `author.date`, `url` web reconstruite : `https://dev.azure.com/<org>/<project>/_git/<repo>/commit/<commitId>`.
+> ⚠️ La recherche de commits n'indexe **que la branche par défaut** de chaque dépôt : les commits poussés sur une branche de feature n'y apparaissent pas. Elle sert de **complément** au feed, jamais de remplacement. Le noter dans `⚠️ Limitations` si c'est la seule source ayant répondu.
 
-**B. Fallback : dériver des PRs collectées en 2.1**
+**C. Fallback local** — Si le feed et la recherche échouent tous les deux, et si le répertoire courant est un dépôt Git :
+```bash
+git log --all --author="$LOGIN" --since="$SINCE_ISO" --pretty=format:'%h|%ad|%s' --date=iso
+```
+Marquer dans `⚠️ Limitations` : « Commits collectés depuis le dépôt local uniquement — l'activité sur les autres dépôts n'est pas visible. »
 
-Si `az rest` échoue (permissions / API down / org auto-hébergée sans cette API) :
-- Pour chaque PR où je suis auteur, récupérer `lastMergeCommit` + `commits` via `az repos pr show --id <id> --include-links -o json` quand l'option est disponible.
-- Sinon, lister juste `lastMergeCommit` des PRs mergées par moi.
-- **Marquer dans `⚠️ Limitations`** : « Liste des commits dérivée des PRs (l'endpoint REST commits n'a pas répondu). Commits directement poussés hors PR non visibles. »
+Conserver : `sha` (court, 7 chars), première ligne du message, `owner/repo`, date, URL web.
 
-**Mode `mcp`** : utiliser le tool équivalent si exposé (`repo_list_commits` ou nom similaire) ; sinon appliquer la stratégie B.
+### 2.4 Issues
 
-### 2.3 Work Items
-
-Récupérer les WIs où l'utilisateur courant est intervenu dans la fenêtre :
-
-- **Assigné à `@me`** avec `[System.ChangedDate] >= since`
-- **Créé par `@me`** dans la fenêtre
-- **Commenté par `@me`** dans la fenêtre (à corréler en 2.3.b)
-
-**Mode `az`** — requête WIQL via `az boards query` :
+Récupérer les issues où l'utilisateur est intervenu dans la fenêtre :
 
 ```bash
-az boards query \
-  --org <url> --project "<project>" \
-  --wiql "SELECT [System.Id], [System.WorkItemType], [System.Title], [System.State], [System.AssignedTo], [System.ChangedDate], [System.CreatedDate] \
-          FROM WorkItems \
-          WHERE ([System.AssignedTo] = @Me OR [System.CreatedBy] = @Me) \
-            AND [System.ChangedDate] >= '$SINCE_ISO' \
-          ORDER BY [System.ChangedDate] DESC" \
-  -o json
+gh search issues --author=@me    --updated=">=$SINCE_DATE" --limit 100 --json number,title,repository,url,state,createdAt,updatedAt,closedAt
+gh search issues --assignee=@me  --updated=">=$SINCE_DATE" --limit 100 --json number,title,repository,url,state,updatedAt
+gh search issues --commenter=@me --updated=">=$SINCE_DATE" --limit 100 --json number,title,repository,url,state,updatedAt
 ```
 
-> Le token `@Me` est résolu côté serveur ADO en fonction de l'utilisateur authentifié — il n'est **pas** nécessaire de l'interpoler.
+Croiser avec `IssuesEvent` / `IssueCommentEvent` du feed pour dater précisément **mes** actions (ouverture, fermeture, commentaire, assignation) plutôt que la dernière mise à jour globale de l'issue.
 
-Pour chaque WI retourné, récupérer les détails et l'historique :
+Commentaires détaillés d'une issue :
 ```bash
-az boards work-item show --id <id> --org <url> --expand all -o json
+gh api "/repos/<owner>/<repo>/issues/<number>/comments" \
+  --jq '.[] | select(.user.login == "'"$LOGIN"'" and .created_at >= "'"$SINCE_ISO"'") | {id, created_at, html_url, body}'
 ```
 
-Et la liste des commentaires :
+Labels utiles à conserver pour la restitution (`bug`, `enhancement`, etc.) : `gh issue view <n> --repo <owner/name> --json labels,state,title,url`.
+
+Pour chaque issue conserver : `number`, `title`, `state`, `labels`, `repository.nameWithOwner`, `url`, et la liste des actions de l'utilisateur (créée / fermée / rouverte / commentée / assignée) déduite du feed.
+
+### 2.5 Threads de review
+
+Pour chaque PR collectée en 2.2 (auteur, reviewer ou commentateur) :
+
+**Commentaires de review inline** :
 ```bash
-az rest --method get \
-  --url "https://dev.azure.com/<org>/<project>/_apis/wit/workItems/<id>/comments?api-version=7.1-preview.4"
+gh api "/repos/<owner>/<repo>/pulls/<number>/comments" \
+  --jq '.[] | {id, in_reply_to_id, user: .user.login, created_at, path, line, html_url, body}'
 ```
-Filtrer ceux dont `createdBy.uniqueName == $EMAIL` et `createdDate >= since`.
 
-**Mode `mcp`** : équivalent (`wit_my_work_items`, `wit_get_work_item`, `wit_get_work_item_comments`).
-
-Pour chaque WI conserver : `id`, `workItemType` (Bug / User Story / Task / Feature), `title`, `state`, `assignedTo.displayName`, `changedDate`, `url` web reconstruite : `https://dev.azure.com/<org>/<project>/_workitems/edit/<id>`, et la liste des actions de `@me` (créé / changé d'état / commenté / réassigné) déduites de l'historique (`fields` diff entre révisions).
-
-### 2.4 Threads / commentaires de PR
-
-Pour chaque PR active du projet **et** chaque PR collectée en 2.1 (auteur ou reviewer) :
-
-**Mode `az`** — pas de commande native, utiliser `az rest` :
-
+**Reviews (approve / changes requested / commented)** :
 ```bash
-az rest --method get \
-  --url "https://dev.azure.com/<org>/<project>/_apis/git/repositories/<repoId>/pullRequests/<prId>/threads?api-version=7.1"
+gh api "/repos/<owner>/<repo>/pulls/<number>/reviews" \
+  --jq '.[] | {id, user: .user.login, state, submitted_at, html_url, body}'
 ```
 
-Pour chaque thread retourné :
-- Conserver les commentaires dont `author.uniqueName == $EMAIL` et `publishedDate >= since`.
-- Conserver aussi les threads où **quelqu'un a répondu après moi** dans la fenêtre (mes commentaires antérieurs + réponse récente d'un autre auteur). Utile pour identifier les demandes en attente.
-- Conserver `pull_request.id` + `title`, `thread.id`, `threadContext.filePath`, `threadContext.rightFileStart.line` (ou `leftFileStart.line`), `comment.content` (tronqué à 200 chars dans le rapport), `publishedDate`, `url` web reconstruite : `https://dev.azure.com/<org>/<project>/_git/<repo>/pullrequest/<prId>?discussionId=<threadId>`.
+**Commentaires de conversation** (non inline) :
+```bash
+gh api "/repos/<owner>/<repo>/issues/<number>/comments" \
+  --jq '.[] | {id, user: .user.login, created_at, html_url, body}'
+```
 
-**Mode `mcp`** : utiliser le tool équivalent (`repo_list_pull_request_threads` ou nom similaire).
+Pour chaque thread :
+- Conserver les commentaires dont `user.login == $LOGIN` **et** `created_at >= SINCE_ISO`.
+- Conserver aussi les threads où **quelqu'un a répondu après moi** dans la fenêtre : commentaire d'un autre auteur dont `in_reply_to_id` pointe vers un de mes commentaires, ou commentaire postérieur au mien dans le même `path`. Utile pour identifier les demandes en attente.
+- Conserver : `owner/repo`, `number` + `title` de la PR, `path:line` si inline, `body` (tronqué à 200 chars dans le rapport), `created_at`, `html_url` (fourni directement par l'API — pas de reconstruction nécessaire).
 
-⚠️ **Garde-fou coût** : cette étape peut être lourde sur une org large. Si la collecte dépasse ~30 secondes ou ~100 PRs scannées, s'arrêter et indiquer dans le rapport :
-> « Threads collectés sur les N PRs où je suis auteur/reviewer seulement (collecte exhaustive interrompue pour limiter le temps). »
+### 2.6 Garde-fou coût
+
+Cette étape peut être lourde si beaucoup de PRs sont concernées. Avant de boucler sur les PRs, vérifier le quota :
+```bash
+gh api rate_limit --jq '{core: .resources.core.remaining, search: .resources.search.remaining}'
+```
+
+L'API de recherche est plafonnée à **30 requêtes/minute** (`search.remaining`), bien plus basse que l'API core (5000/h) : enchaîner les `gh search` sans se soucier du quota fait échouer la collecte en milieu de flow. Limiter le nombre de recherches distinctes à celles listées en 2.2–2.4.
+
+Si la collecte dépasse ~30 secondes, ~100 PRs scannées, ou si `core.remaining` descend sous 200 (ou `search.remaining` sous 5), s'arrêter et indiquer dans le rapport :
+> « Threads collectés sur les N PRs les plus récentes où je suis auteur/reviewer seulement (collecte exhaustive interrompue pour limiter le temps / le quota API). »
 
 ---
 
 ## Phase 3 — Filtrage final côté client
 
-Même si certains appels acceptent un filtre `since` côté serveur, **toujours refiltrer côté client** sur la fenêtre `[since, now]` pour garantir la cohérence (les fuseaux et arrondis serveur ne sont pas toujours fiables).
+Même si les qualifiers de recherche filtrent déjà côté serveur, **toujours refiltrer côté client** sur la fenêtre `[SINCE_ISO, NOW_ISO]` : les qualifiers `--updated` / `--author-date` s'appliquent à la journée et à la dernière mise à jour globale, pas à l'action précise de l'utilisateur.
 
-Pour chaque type d'item, conserver uniquement ceux dont la **date d'activité pertinente** tombe dans la fenêtre :
-- **PR** : `creationDate`, `closedDate`, ou date du dernier commentaire de `@me`
-- **Commit** : `author.date`
-- **Work Item** : `changedDate` OU date d'un commentaire de `@me`
-- **Thread** : `publishedDate` du commentaire
+Pour chaque type d'item, conserver uniquement ceux dont la **date d'activité pertinente de l'utilisateur** tombe dans la fenêtre :
+- **PR** : `createdAt` (si je suis l'auteur), date de merge, date de ma review, ou date de mon dernier commentaire
+- **Commit** : date de l'auteur / du push
+- **Issue** : date de mon action (ouverture / fermeture / commentaire / assignation)
+- **Thread** : `created_at` / `submitted_at` du commentaire ou de la review
 
-Dédupliquer si une même PR est ressortie plusieurs fois (auteur + reviewer + commentateur). Priorité d'affectation : créée > mergée > commentée > en attente.
+Dédupliquer si une même PR est ressortie de plusieurs recherches (auteur + reviewer + commentateur). Priorité d'affectation : **créée > mergée > reviewée > commentée > en attente de mon review**.
 
 ---
 
@@ -264,34 +289,35 @@ Le rapport est **toujours écrit en français** et structuré comme suit. Si une
 ### 4.1 Structure du rapport
 
 ```markdown
-# 🗓️ Activité Azure DevOps — <date locale, ex: 28/05/2026>
+# 🗓️ Activité GitHub — <date locale, ex: 02/09/2026>
 
 **Fenêtre** : <since ISO> → <now ISO> (<N> heures)
-**Organisation** : <org>
-**Utilisateur** : <displayName> (`<uniqueName>`)
-**Projets scannés** : <liste ou « tous »>
-**Source** : `az` CLI _ou_ MCP devops (fallback)
+**Compte** : <name> (`<login>`) — <host>
+**Périmètre** : <tous les dépôts visibles | org:<org> | liste des repos>
 
 ---
 
 ## 📊 Résumé
 
-- 🟢 **Pull Requests** : <N créées> / <N mergées> / <N commentées> / <N en attente de mon review>
-- 📝 **Commits** : <N> sur <M> repos
-- 🎯 **Work Items** : <N créés> / <N changés d'état> / <N commentés>
-- 💬 **Threads PR** : <N commentaires postés> / <N réponses reçues sur mes threads>
+- 🟢 **Pull Requests** : <N créées> / <N mergées> / <N reviewées> / <N commentées> / <N en attente de mon review>
+- 📝 **Commits** : <N> sur <M> dépôts
+- 🎯 **Issues** : <N créées> / <N fermées> / <N commentées>
+- 💬 **Threads de review** : <N commentaires postés> / <N réponses reçues sur mes threads>
 
 ---
 
 ## 🟢 Pull Requests
 
 ### Créées par moi
-- [`!<id>` <title>](<url>) — <repo> — créée à <HH:MM>, statut `<status>`
+- [`<owner/repo>#<number>` <title>](<url>) — créée à <HH:MM>, statut `<state>`<, brouillon si isDraft>
 
 ### Mergées par moi
 - ...
 
-### Commentées par moi (sans en être l'auteur)
+### Reviewées par moi
+- [`<owner/repo>#<number>` <title>](<url>) — `<approved | changes_requested | commented>` à <HH:MM> — auteur : <login>
+
+### Commentées par moi (sans en être l'auteur ni le reviewer)
 - ...
 
 ### En attente de mon review
@@ -303,45 +329,45 @@ _(Si une sous-section est vide → la masquer ici uniquement, pas le bloc parent
 
 ## 📝 Commits
 
-Groupés par repo, chronologiques inversés à l'intérieur :
+Groupés par dépôt, chronologiques inversés à l'intérieur :
 
-### <repo-name>
-- `<sha7>` <subject> — <HH:MM>
+### <owner/repo>
+- [`<sha7>`](<url>) <sujet> — <HH:MM> — branche `<ref>` si connue
 - ...
 
 ---
 
-## 🎯 Work Items
+## 🎯 Issues
 
-### Créés
-- `<type> #<id>` <title> — état `<state>` — <HH:MM>
+### Créées
+- [`<owner/repo>#<number>` <title>](<url>) — état `<state>` — <HH:MM>
 
-### Changements d'état
-- `<type> #<id>` <title> : `<from>` → `<to>` — <HH:MM>
+### Fermées / rouvertes
+- [`<owner/repo>#<number>` <title>](<url>) : `open` → `closed` — <HH:MM>
 
-### Commentés
-- `<type> #<id>` <title> — commentaire à <HH:MM>
+### Commentées
+- [`<owner/repo>#<number>` <title>](<url>) — commentaire à <HH:MM>
 
 ---
 
-## 💬 Threads PR
+## 💬 Threads de review
 
 ### Commentaires que j'ai postés
-- PR `!<id>` <title> — <path:line si dispo> — <HH:MM>
+- [`<owner/repo>#<number>` <title>](<url>) — <path:line si dispo> — <HH:MM>
   > « <extrait du commentaire, max 200 chars> »
 
 ### Réponses reçues sur mes threads (à traiter)
-- PR `!<id>` <title> — <auteur de la réponse> a répondu à <HH:MM>
+- [`<owner/repo>#<number>` <title>](<url>) — <login> a répondu à <HH:MM>
   > « <extrait, max 200 chars> »
 
 ---
 
 ## ⏱️ Timeline (chronologique inversée)
 
-- `<HH:MM>` — <icône-type> <verbe court> <ressource> [<repo / projet>](<url>)
+- `<HH:MM>` — <icône-type> <verbe court> [<ressource>](<url>) — <owner/repo>
 - `<HH:MM>` — ...
 
-Légende d'icônes : 🟢 PR · 📝 commit · 🎯 work item · 💬 thread
+Légende d'icônes : 🟢 PR · 📝 commit · 🎯 issue · 💬 thread
 
 ---
 
@@ -354,12 +380,13 @@ Légende d'icônes : 🟢 PR · 📝 commit · 🎯 work item · 💬 thread
 
 - **Tri** : dans chaque sous-section thématique, ordre chronologique **inversé** (du plus récent au plus ancien).
 - **Timestamps** : afficher l'heure locale au format `HH:MM` quand l'événement est dans les 24h ; ajouter la date `JJ/MM HH:MM` si la fenêtre `--hours` dépasse 24h.
-- **URLs** : toutes les ressources doivent être cliquables (Markdown link). Si la source ne renvoie pas d'URL web, reconstruire :
-  - PRs → `https://dev.azure.com/<org>/<project>/_git/<repo>/pullrequest/<id>`
-  - Commits → `https://dev.azure.com/<org>/<project>/_git/<repo>/commit/<sha>`
-  - Work items → `https://dev.azure.com/<org>/<project>/_workitems/edit/<id>`
+- **URLs** : toutes les ressources doivent être cliquables (Markdown link). L'API GitHub renvoie `html_url` / `url` directement — l'utiliser. Reconstruire uniquement si absent :
+  - PRs → `https://<host>/<owner>/<repo>/pull/<number>`
+  - Commits → `https://<host>/<owner>/<repo>/commit/<sha>`
+  - Issues → `https://<host>/<owner>/<repo>/issues/<number>`
+- **Nommage** : toujours préfixer par `owner/repo` — une même numérotation `#123` existe dans plusieurs dépôts.
 - **Troncature** : aucun extrait de commentaire ne doit dépasser 200 caractères dans le rapport. Ajouter `…` si tronqué.
-- **Pas de doublons** : une PR mentionnée dans « Créées » ne réapparaît pas dans « Commentées » (priorité : créée > mergée > commentée > en attente).
+- **Pas de doublons** : une PR mentionnée dans « Créées » ne réapparaît pas dans « Commentées » (priorité : créée > mergée > reviewée > commentée > en attente).
 
 ### 4.3 Sortie
 
@@ -369,7 +396,7 @@ Si l'utilisateur a passé `--save` ou demande explicitement à sauvegarder, écr
 
 Toujours conclure le rapport par une question courte via `AskUserQuestion` :
 
-- « Veux-tu un focus sur une PR / un WI précis ? »
+- « Veux-tu un focus sur une PR / une issue précise ? »
 - « Veux-tu sauvegarder ce rapport en local ? »
 - « Veux-tu étendre la fenêtre (ex: 48h, semaine) ? »
 
@@ -378,9 +405,9 @@ Toujours conclure le rapport par une question courte via `AskUserQuestion` :
 ## Règles transverses
 
 - **Langue** : tout le flow et le rapport final sont en **français**.
-- **Read-only strict** : ce skill ne lance **que** des commandes de lecture (`az ... list/show/query`, `az rest --method get`, tools MCP de lecture). Aucune création, modification, suppression de PR / WI / commentaire / branche. Si l'utilisateur enchaîne avec une action d'écriture, lui rappeler que ce skill ne fait que lire.
+- **Read-only strict** : ce skill ne lance **que** des commandes de lecture (`gh search`, `gh pr list`, `gh issue list`, `gh api` en GET, `git log`). Aucune création, modification, suppression de PR / issue / commentaire / branche. Si l'utilisateur enchaîne avec une action d'écriture, lui rappeler que ce skill ne fait que lire.
 - **Pas d'écriture sans accord** : aucune création de fichier sans demande explicite (`--save` ou réponse positive à la question finale).
 - **Confidentialité** : ne pas recopier intégralement des commentaires longs (cf. troncature 200 chars). Si un commentaire contient ce qui ressemble à un secret (token, clé API, mot de passe, JWT), le masquer (`****`) et signaler dans `⚠️ Limitations`.
 - **Une seule exécution par invocation** : pas de boucle « refresh toutes les N minutes » dans ce skill — pour cela utiliser le skill `loop` séparément.
-- **Tolérance aux échecs partiels** : si un projet est inaccessible (perm denied), continuer avec les autres et lister le projet en `⚠️ Limitations` plutôt que d'échouer le flow complet.
-- **Traçabilité de la source** : toujours indiquer dans l'en-tête du rapport quelle source a été utilisée (`az` ou `mcp` fallback), pour permettre à l'utilisateur de comprendre les éventuels écarts de complétude.
+- **Tolérance aux échecs partiels** : si un dépôt est inaccessible (404 / permission refusée), continuer avec les autres et le lister en `⚠️ Limitations` plutôt que d'échouer le flow complet.
+- **Traçabilité du compte** : toujours indiquer dans l'en-tête du rapport le `login` utilisé et l'hôte, pour permettre de comprendre un rapport vide dû à un mauvais compte actif (`gh auth switch`).

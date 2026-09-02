@@ -1,11 +1,11 @@
 {
   "name": "daily-activity",
-  "description": "Récapitule l'activité Azure DevOps de l'utilisateur courant sur les dernières 24 heures glissantes (PRs, commits, work items, threads) via la CLI az (extension azure-devops), avec fallback sur le MCP devops",
-  "version": "0.2.0",
+  "description": "Récapitule l'activité GitHub de l'utilisateur courant sur les dernières 24 heures glissantes (PRs, commits, issues, threads de review) via la CLI gh (recherche globale + feed d'événements)",
+  "version": "1.0.0",
   "author": {
     "name": "Florian Legars",
     "email": "legars.florian@gmail.com"
   },
   "license": "MIT",
-  "keywords": ["azure-devops", "activity", "standup", "daily", "recap", "az-cli"]
+  "keywords": ["github", "activity", "standup", "daily", "recap", "gh-cli"]
 }
