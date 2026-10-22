@@ -91,32 +91,23 @@ Chaque artefact suit un template figé — US, task fonctionnelle, task techniqu
 
 **Quand l'utiliser** — Pour reviewer une PR ouverte (avant ou après merge), pour standardiser les reviews d'équipe, ou pour s'auto-évaluer avant de demander une review humaine.
 
-### [`frontend-specialist`](./plugins/frontend-specialist)
+### [`codebase-toolkit`](./plugins/codebase-toolkit)
 
-> Expert front-end React qui analyse les patterns du projet avant toute proposition et n'invente jamais une convention qui n'existe pas dans la codebase.
+> Boîte à outils pour travailler sur la codebase courante en s'alignant strictement sur ses patterns : experts back Symfony et front React, feature fullstack pilotée par un contrat d'API, audit back-end, cartographie d'onboarding et traçage d'un flux de bout en bout.
 
-**À quoi ça sert** — Intervenir sur une codebase React (analyse, proposition ou implémentation) en s'alignant **strictement** sur les patterns observés : structure de dossiers, hooks custom, lib d'état (Redux / Zustand / Tanstack Query), conventions de tests (RTL / Vitest / Jest), styling. L'agent lit le code avant de proposer, et signale explicitement quand un pattern n'est pas observable plutôt que de l'inventer.
+> ⚠️ **Migration** — Ce plugin regroupe les anciens plugins `frontend-specialist`, `backend-specialist` et `audit-codebase` (noms de skills et d'agents inchangés). Les désinstaller (`/plugin uninstall <nom>@flegars-perso-marketplace`), puis `/plugin install codebase-toolkit@flegars-perso-marketplace`. Les commandes complètes sont préfixées : `/codebase-toolkit:backend-specialist`, etc.
 
-**Ce que ça apporte :**
+**À quoi ça sert** — Intervenir sur un repo existant sans jamais inventer de convention : chaque skill lit le code avant de proposer, ancre ses affirmations sur `path:line` et signale explicitement ce qui n'est pas observable. Six points d'entrée :
 
-- **Slash command `/frontend-specialist`** — Orchestre un flow en 5 phases :
-  1. **Cadrage** — Reformulation du besoin et choix du mode (`analyse` / `proposition` / `implementation`)
-  2. **Vérification stack** — Détection React + bundler + TS + lib d'état + lib de tests, mise en garde si Next.js / React Native (hors périmètre validé)
-  3. **Cartographie des patterns** — Structure de dossiers, hooks, gestion d'état, tests, styling, typage — chaque item ancré sur des fichiers du repo
-  4. **Intervention** — Délégation à l'agent `frontend-specialist` avec toute la cartographie
-  5. **Sortie** — Rapport inline, proposition à valider, ou édition effective des fichiers (avec validation intermédiaire avant écriture)
-- **Agent `frontend-specialist`** — Un développeur front senior qui refuse d'inventer un pattern : toute affirmation pointe un fichier précis (`src/path/file.tsx:42`). Présente des alternatives quand plusieurs approches sont raisonnables, recommande une option, et liste les risques.
-- **Checklist de cartographie figée** — Référence `react-pattern-checklist.md` qui guide systématiquement l'analyse : stack, structure, composition, hooks, état (local/partagé/serveur), effets, erreurs, tests, typage, styling. Format de synthèse standardisé pour nourrir l'agent.
+- **Comprendre** — `/map-codebase` (cartographie d'onboarding du repo) et `/trace-flow` (suivi d'un flux réel, de l'écran à la base de données).
+- **Intervenir** — `/backend-specialist` (Symfony, curseur simplicité ↔ SOLID), `/frontend-specialist` (React) et `/fullstack-specialist` (feature back + front autour d'un contrat d'API validé d'abord).
+- **Évaluer** — `/audit-codebase` (audit back-end module par module).
 
-**Quand l'utiliser** — Onboarder sur une codebase React inconnue (mode `analyse`), préparer une feature front avec un plan validé avant code (mode `proposition`), ou implémenter directement une feature qui respecte les conventions du repo (mode `implementation`).
-
-### [`backend-specialist`](./plugins/backend-specialist)
-
-> Expert back-end PHP/Symfony qui privilégie la solution la plus simple alignée sur les patterns du projet, et applique SOLID strictement sur le code pérenne.
-
-**À quoi ça sert** — Intervenir sur une codebase PHP/Symfony (analyse, proposition ou implémentation) avec un curseur **simplicité ↔ SOLID** arbitré explicitement en début de flow. L'agent ne complexifie jamais « pour le plaisir » : en régime `simple` (code jetable / utilitaire / one-shot), il défend la solution la plus directe et liste explicitement les abstractions volontairement non posées. En régime `perenne` (cœur métier / contrat public / longue durée de vie), il applique SOLID et les patterns hexagonal/CQRS du projet sans concession.
+Les trois agents (`backend-specialist`, `frontend-specialist`, `flow-tracer`) sont mutualisés : `/map-codebase`, `/audit-codebase` et `/fullstack-specialist` délèguent aux deux spécialistes plutôt que de dupliquer leur expertise.
 
 **Ce que ça apporte :**
+
+#### Expert back-end — `/backend-specialist`
 
 - **Slash command `/backend-specialist`** — Orchestre un flow en 6 phases :
   1. **Cadrage** — Reformulation du besoin et choix du mode (`analyse` / `proposition` / `implementation`)
@@ -129,7 +120,62 @@ Chaque artefact suit un template figé — US, task fonctionnelle, task techniqu
 - **Référence figée d'arbitrage `simplicity-vs-solid.md`** — Définition des deux régimes, tableau de décision rapide, liste des mismatches typiques, format de traçabilité des abstractions non posées.
 - **Checklist de cartographie figée `symfony-pattern-checklist.md`** — Guide systématique : stack, structure, CQRS/Messenger, API Platform, Doctrine, tests, sécurité, Domain Events / outbox, conventions de code. Format de synthèse standardisé pour nourrir l'agent.
 
-**Quand l'utiliser** — Pour toute intervention back où il faut éviter à la fois le **sur-engineering** (couches inutiles sur un script one-shot) et la **dette technique** (raccourcis SOLID sur du cœur métier). En particulier : nouvelle feature dans le Domain, refacto d'un service partagé, script CLI ponctuel, fix sur cœur métier.
+#### Expert front-end — `/frontend-specialist`
+
+- **Slash command `/frontend-specialist`** — Orchestre un flow en 5 phases :
+  1. **Cadrage** — Reformulation du besoin et choix du mode (`analyse` / `proposition` / `implementation`)
+  2. **Vérification stack** — Détection React + bundler + TS + lib d'état + lib de tests, mise en garde si Next.js / React Native (hors périmètre validé)
+  3. **Cartographie des patterns** — Structure de dossiers, hooks, gestion d'état, tests, styling, typage — chaque item ancré sur des fichiers du repo
+  4. **Intervention** — Délégation à l'agent `frontend-specialist` avec toute la cartographie
+  5. **Sortie** — Rapport inline, proposition à valider, ou édition effective des fichiers (avec validation intermédiaire avant écriture)
+- **Agent `frontend-specialist`** — Un développeur front senior qui refuse d'inventer un pattern : toute affirmation pointe un fichier précis (`src/path/file.tsx:42`). Présente des alternatives quand plusieurs approches sont raisonnables, recommande une option, et liste les risques.
+- **Checklist de cartographie figée** — Référence `react-pattern-checklist.md` qui guide systématiquement l'analyse : stack, structure, composition, hooks, état (local/partagé/serveur), effets, erreurs, tests, typage, styling. Format de synthèse standardisé pour nourrir l'agent.
+
+#### Feature fullstack — `/fullstack-specialist`
+
+- **Slash command `/fullstack-specialist`** — Feature back Symfony + front React, **contrat d'API d'abord**. Flow en 6 phases :
+  1. **Cadrage** — Besoin, mode (`analyse` / `proposition` / `implementation`), régime back (`simple` / `perenne`), emplacement du front (même repo ou autre repo). Accepte en entrée un découpage `/spec-writer:split-spec-by-layer` et reprend ses contrats
+  2. **Vérification des stacks** — Symfony côté back, React côté front ; arrêt explicite si un côté est hors périmètre ; repérage des conventions API existantes (format d'erreur, pagination, casse, client API front)
+  3. **Contrat d'API** — Rédigé selon le template figé et **validé par l'utilisateur avant toute délégation**
+  4. **Délégation en parallèle** — `backend-specialist` produit le contrat, `frontend-specialist` le consomme ; validation intermédiaire avant toute écriture ; retour au contrat si un agent le juge irréalisable
+  5. **Contrôle de cohérence** — Tableau ✅ / ❌ par opération : route, champs de requête et de réponse, codes d'erreur traités à l'écran, sécurité, pagination
+  6. **Sortie** — Selon le mode, avec checks ciblés des deux côtés
+- **Template figé `api-contract-template.md`** — Un bloc par opération : sécurité / requête (types, obligatoire, nullable, validations) / réponse / erreurs avec leur traitement front attendu / compatibilité / exemple. Aligné sur les conventions observées, cohérent avec la section « Contrat d'interface » de `spec-writer`.
+
+#### Audit back-end — `/audit-codebase`
+
+- **Slash command `/audit-codebase [--modules=<liste>] [--full]`** — Orchestre un flow en 6 phases :
+  1. **Cadrage** — Périmètre : toute la codebase / liste de modules / un seul module
+  2. **Vérification stack** — PHP + Symfony + Doctrine + API Platform + Messenger + tests + PHPStan (arrêt explicite si stack non Symfony)
+  3. **Auto-détection des modules** — Bounded contexts DDD si présents, fallback sur dossiers métier de `src/`, ou bundles
+  4. **Confirmation** — L'utilisateur valide ou ajuste la liste des modules à auditer
+  5. **Audit module par module** — Délégation à l'agent `backend-specialist` (en régime `perenne`, mode `analyse`) avec la grille d'audit figée en input
+  6. **Agrégation & sortie** — Fusion des findings dans le template, écriture dans `docs/audit/<YYYY-MM-DD>-audit-codebase.md` (jamais d'écrasement)
+- **Grille d'audit figée `audit-grid.md`** — 6 axes obligatoires par module, dans l'ordre : ✅ **Points forts à conserver** (boussole pour les évolutions futures) / ⚠️ **Risques & dette technique** (god classes, fuites de couche, magic strings, sécurité, TODO/FIXME) / 🪓 **Opportunités de simplification** (interfaces à 1 impl, indirections gratuites, DDD cargo-cult, abstractions prématurées — avec condition de vérification systématique avant de proposer de retirer) / 🧪 **Tests & qualité** (couverture par couche, fragilité, sur-mock, PHPStan, fixtures) / 🚀 **Performance & scalabilité** (N+1, pagination absente, sync vs async Messenger, sérialisation) / 🧭 **Cohérence architecturale** (couches étanches, CQRS effectif, Domain Events bien câblés). Chaque finding est ancré sur `path:line`, avec **sévérité** (`bloquant`/`important`/`mineur`) et **effort** (`S`/`M`/`L`).
+- **Template figé du rapport `audit-template.md`** — Structure imposée : front-matter YAML / titre / 🧭 **Synthèse exécutive** (Top 3 forces/risques/simplifications + tableau de scoring qualitatif par axe) / 🗺️ **Cartographie générale** (stack + architecture + tableau des modules) / 📦 **Audit module par module** (un sous-bloc complet avec les 6 axes par module, dans l'ordre) / 🔁 **Recommandations transverses** (findings inter-modules) / 🛣️ **Roadmap suggérée** (Court / Moyen / Long terme — chaque finding une seule fois) / ⚠️ **Limitations de l'audit** (ce qui n'a pas été couvert, traçabilité).
+- **Réutilisation du `backend-specialist`** — Pas d'agent dédié dupliqué : le skill délègue chaque module à l'agent `backend-specialist` du même plugin, avec la grille en input et le format de sortie imposé par le template.
+
+#### Cartographie d'onboarding — `/map-codebase`
+
+- **Slash command `/map-codebase [sous-dossier]`** — Lecture seule. Flow en 5 phases :
+  1. **Cadrage** — Périmètre (repo entier / sous-dossier) et public (nouvel arrivant / revue d'architecture)
+  2. **Détection de stack** — `composer.json`, `package.json`, Docker, Makefile, CI, `.env.dist` (noms de variables uniquement)
+  3. **Cartographie** — Déléguée **en parallèle** à `backend-specialist` et `frontend-specialist` (mode `analyse`, avec leurs checklists), le skill couvrant lui-même le transverse (démarrage, CI/CD, variables, services externes, diagramme d'architecture)
+  4. **Assemblage** — Selon le template figé
+  5. **Sortie** — Inline et/ou `docs/codebase-map.md` (jamais d'écrasement silencieux)
+- **Template figé `codebase-map-template.md`** — 11 sections : stack / démarrage rapide / architecture (Mermaid) / modules / flux principaux / conventions back et front / tests / CI/CD & déploiement / glossaire métier / pièges & zones de dette / limitations. Toute affirmation est ancrée `path:line` ou marquée `[NON VÉRIFIÉ]` ; aucun secret recopié.
+
+#### Traçage de flux — `/trace-flow`
+
+- **Slash command `/trace-flow <point d'entrée>`** — Lecture seule. Point d'entrée : route HTTP / URL, composant front, commande console, message Messenger, ou description fonctionnelle (au plus 3 candidats proposés). Flow en 4 phases :
+  1. **Cadrage** — Scénario (nominal ou une erreur précise) et profondeur (frontière du repo ou appels sortants décrits)
+  2. **Résolution du point d'entrée** — Localisé dans le code et confirmé par l'utilisateur, jamais deviné
+  3. **Traçage** — Délégation à l'agent `flow-tracer`
+  4. **Sortie** — Inline et/ou `docs/flows/<slug>.md`
+- **Agent `flow-tracer`** — Suit le chemin d'exécution fichier après fichier ; une étape n'existe que si elle a été lue, et toute incertitude (plusieurs handlers possibles, appel dynamique, code hors repo) est marquée `[RUPTURE]` avec la façon de la lever.
+- **Template figé `flow-template.md`** — Résumé / point d'entrée / diagramme de séquence Mermaid / tableau des étapes `# | Couche | Fichier:ligne | Rôle | Données` / effets de bord (base, events, appels externes, frontière transactionnelle) / branches d'erreur / points d'attention / fichiers lus.
+
+**Quand l'utiliser** — `/map-codebase` à l'arrivée sur un repo ou avant une revue d'architecture. `/trace-flow` pour déboguer, préparer une revue ou rédiger une US à partir d'un comportement existant. `/backend-specialist` et `/frontend-specialist` pour une intervention d'un seul côté qui doit éviter à la fois le sur-engineering et la dette. `/fullstack-specialist` dès qu'une feature exige un endpoint et un écran. `/audit-codebase` pour un état des lieux back-end ou pour cadrer un chantier de réduction de complexité.
 
 ### [`daily-activity`](./plugins/daily-activity)
 
@@ -150,29 +196,6 @@ Chaque artefact suit un template figé — US, task fonctionnelle, task techniqu
 **Quand l'utiliser** — Le matin avant le daily standup, le soir avant de fermer la machine, ou n'importe quand pour répondre à « qu'est-ce que j'ai poussé hier ? ». Particulièrement utile après un context-switch entre plusieurs dépôts.
 
 **Pré-requis** — GitHub CLI installé (`brew install gh`) et authentifié (`gh auth login`), avec au minimum le scope `repo` (et `read:org` pour `--org`). En multi-comptes, vérifier le compte actif avec `gh auth status` et basculer avec `gh auth switch --user <login>`. Pour une instance GitHub Enterprise, passer `--host=<hostname>`.
-
-### [`audit-codebase`](./plugins/audit-codebase)
-
-> Audit back-end PHP/Symfony complet, module par module, qui produit un rapport markdown structuré.
-
-**À quoi ça sert** — Obtenir un **état des lieux exhaustif et standardisé** d'une codebase Symfony : ce qui marche et qu'il faut conserver, ce qui pose risque ou accumule de la dette, ce qui pourrait être simplifié (code "complexe" remplaçable par un pattern plus simple), ce qui manque côté tests, ce qui risque de coûter en perf, et où l'architecture revendiquée fuit en pratique. Le rapport est volontairement **qualifié** par axe (🟢/🟡/🔴) plutôt que noté sur 20 — l'objectif est d'éclairer les décisions, pas de classer.
-
-**Ce que ça apporte :**
-
-- **Slash command `/audit-codebase [--modules=<liste>] [--full]`** — Orchestre un flow en 6 phases :
-  1. **Cadrage** — Périmètre : toute la codebase / liste de modules / un seul module
-  2. **Vérification stack** — PHP + Symfony + Doctrine + API Platform + Messenger + tests + PHPStan (arrêt explicite si stack non Symfony)
-  3. **Auto-détection des modules** — Bounded contexts DDD si présents, fallback sur dossiers métier de `src/`, ou bundles
-  4. **Confirmation** — L'utilisateur valide ou ajuste la liste des modules à auditer
-  5. **Audit module par module** — Délégation à l'agent `backend-specialist` (en régime `perenne`, mode `analyse`) avec la grille d'audit figée en input
-  6. **Agrégation & sortie** — Fusion des findings dans le template, écriture dans `docs/audit/<YYYY-MM-DD>-audit-codebase.md` (jamais d'écrasement)
-- **Grille d'audit figée `audit-grid.md`** — 6 axes obligatoires par module, dans l'ordre : ✅ **Points forts à conserver** (boussole pour les évolutions futures) / ⚠️ **Risques & dette technique** (god classes, fuites de couche, magic strings, sécurité, TODO/FIXME) / 🪓 **Opportunités de simplification** (interfaces à 1 impl, indirections gratuites, DDD cargo-cult, abstractions prématurées — avec condition de vérification systématique avant de proposer de retirer) / 🧪 **Tests & qualité** (couverture par couche, fragilité, sur-mock, PHPStan, fixtures) / 🚀 **Performance & scalabilité** (N+1, pagination absente, sync vs async Messenger, sérialisation) / 🧭 **Cohérence architecturale** (couches étanches, CQRS effectif, Domain Events bien câblés). Chaque finding est ancré sur `path:line`, avec **sévérité** (`bloquant`/`important`/`mineur`) et **effort** (`S`/`M`/`L`).
-- **Template figé du rapport `audit-template.md`** — Structure imposée : front-matter YAML / titre / 🧭 **Synthèse exécutive** (Top 3 forces/risques/simplifications + tableau de scoring qualitatif par axe) / 🗺️ **Cartographie générale** (stack + architecture + tableau des modules) / 📦 **Audit module par module** (un sous-bloc complet avec les 6 axes par module, dans l'ordre) / 🔁 **Recommandations transverses** (findings inter-modules) / 🛣️ **Roadmap suggérée** (Court / Moyen / Long terme — chaque finding une seule fois) / ⚠️ **Limitations de l'audit** (ce qui n'a pas été couvert, traçabilité).
-- **Réutilisation du `backend-specialist`** — Pas d'agent dédié dupliqué : le skill délègue chaque module à l'agent `backend-specialist` (du plugin homonyme), avec la grille en input et le format de sortie imposé par le template. Le `backend-specialist` doit donc être installé en parallèle pour utiliser le plugin.
-
-**Quand l'utiliser** — Pour un état des lieux à la prise de poste sur une codebase Symfony, avant un gros refacto pour identifier la dette et les simplifications, pour préparer un dossier d'arbitrage technique (« qu'est-ce qu'on garde, qu'est-ce qu'on simplifie, qu'est-ce qu'on retravaille »), ou pour cadrer un chantier de réduction de complexité.
-
-**Pré-requis** — Le plugin `backend-specialist@flegars-perso-marketplace` doit être installé (le slash command délègue à son agent).
 
 ### [`us-developer`](./plugins/us-developer)
 
@@ -243,29 +266,46 @@ flegars-claude-code-marketplace/
 │   │           └── references/
 │   │               ├── review-template.md
 │   │               └── scoring-rubric.md
-│   ├── frontend-specialist/
+│   ├── codebase-toolkit/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   ├── agents/
-│   │   │   └── frontend-specialist.md
+│   │   │   ├── backend-specialist.md
+│   │   │   ├── frontend-specialist.md
+│   │   │   └── flow-tracer.md          # traçage d'un flux (lecture seule)
 │   │   └── skills/
-│   │       └── frontend-specialist/
+│   │       ├── backend-specialist/
+│   │       │   ├── SKILL.md
+│   │       │   ├── metadata.json
+│   │       │   └── references/
+│   │       │       ├── simplicity-vs-solid.md
+│   │       │       └── symfony-pattern-checklist.md
+│   │       ├── frontend-specialist/
+│   │       │   ├── SKILL.md
+│   │       │   ├── metadata.json
+│   │       │   └── references/
+│   │       │       └── react-pattern-checklist.md
+│   │       ├── fullstack-specialist/
+│   │       │   ├── SKILL.md
+│   │       │   ├── metadata.json
+│   │       │   └── references/
+│   │       │       └── api-contract-template.md
+│   │       ├── audit-codebase/
+│   │       │   ├── SKILL.md
+│   │       │   ├── metadata.json
+│   │       │   └── references/
+│   │       │       ├── audit-grid.md
+│   │       │       └── audit-template.md
+│   │       ├── map-codebase/
+│   │       │   ├── SKILL.md
+│   │       │   ├── metadata.json
+│   │       │   └── references/
+│   │       │       └── codebase-map-template.md
+│   │       └── trace-flow/
 │   │           ├── SKILL.md
 │   │           ├── metadata.json
 │   │           └── references/
-│   │               └── react-pattern-checklist.md
-│   ├── backend-specialist/
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   ├── agents/
-│   │   │   └── backend-specialist.md
-│   │   └── skills/
-│   │       └── backend-specialist/
-│   │           ├── SKILL.md
-│   │           ├── metadata.json
-│   │           └── references/
-│   │               ├── simplicity-vs-solid.md
-│   │               └── symfony-pattern-checklist.md
+│   │               └── flow-template.md
 │   ├── daily-activity/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
@@ -273,16 +313,6 @@ flegars-claude-code-marketplace/
 │   │       └── daily-activity/
 │   │           ├── SKILL.md
 │   │           └── metadata.json
-│   ├── audit-codebase/
-│   │   ├── .claude-plugin/
-│   │   │   └── plugin.json
-│   │   └── skills/
-│   │       └── audit-codebase/
-│   │           ├── SKILL.md
-│   │           ├── metadata.json
-│   │           └── references/
-│   │               ├── audit-grid.md
-│   │               └── audit-template.md
 │   └── us-developer/
 │       ├── .claude-plugin/
 │       │   └── plugin.json
