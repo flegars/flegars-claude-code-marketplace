@@ -1,23 +1,25 @@
 ---
-name: split-us-into-tasks
-description: "Découpe une User Story déjà rédigée en plusieurs tasks atomiques, puis propose systématiquement de les enregistrer dans Azure DevOps rattachées à l'US parente. Sources de l'US : work item Azure DevOps (id/URL), PR ou issue GitHub (URL), ou fichier .md local / markdown collé en fallback. Orchestre un flow en 4 phases : acquisition de l'US → découpage en tasks via l'agent us-splitter → validation du découpage → enregistrement Azure DevOps (proposé systématiquement). Chaque task suit la structure figée du plugin (titre, Definition of Done, dépendances, estimation). Déclencher quand l'utilisateur dit : /split-us-into-tasks, 'découpe cette US en tasks', 'crée les tasks de cette US', 'split cette US', 'décompose l'US en tâches ADO', 'génère les work items de cette US', ou fournit une US (work item ADO / PR GitHub / fichier) à décomposer en tasks."
+name: split-us-by-criteria
+description: "Découpe fonctionnellement une User Story déjà rédigée en plusieurs tasks atomiques, chacune rattachée aux critères d'acceptance qu'elle couvre, puis propose systématiquement de les enregistrer dans Azure DevOps rattachées à l'US parente. Sources de l'US : work item Azure DevOps (id/URL), PR ou issue GitHub (URL), ou fichier .md local / markdown collé en fallback. Orchestre un flow en 4 phases : acquisition de l'US → découpage en tasks via l'agent criteria-splitter → validation du découpage → enregistrement Azure DevOps (proposé systématiquement). Chaque task suit la structure figée du plugin (titre, Definition of Done, dépendances, estimation). Déclencher quand l'utilisateur dit : /split-us-by-criteria, 'découpe cette US en tasks', 'crée les tasks de cette US', 'split cette US', 'décompose l'US en tâches ADO', 'génère les work items de cette US', ou fournit une US (work item ADO / PR GitHub / fichier) à décomposer en tasks. Pour un découpage technique par couche (back, front, infra, data, QA), utiliser plutôt /split-spec-by-layer."
 user_invocable: true
 argument-hint: "[url/id work item ADO | url PR ou issue GitHub | chemin US.md]"
 ---
 
-# Split US Into Tasks
+# Split US By Criteria
 
 Orchestre le découpage d'une **User Story déjà rédigée** en plusieurs tasks atomiques et actionnables, puis **propose systématiquement** de créer ces tasks dans Azure DevOps en les rattachant à l'US parente.
 
 C'est l'étape qui suit la rédaction (`/write-us-from-code`, `/write-us-from-brief`) : on part d'une US validée et on produit le plan de travail exécutable. Chaque task suit la structure figée définie dans :
-`${CLAUDE_PLUGIN_ROOT}/skills/split-us-into-tasks/references/task-template.md`
+`${CLAUDE_PLUGIN_ROOT}/skills/split-us-by-criteria/references/task-template.md`
+
+> ℹ️ Ce découpage est **fonctionnel** : chaque task livre une part des critères d'acceptance de l'US. Pour un découpage **technique par couche** (back, front, infra, data, QA) d'une US ou d'une spec libre, utiliser `/split-spec-by-layer`.
 
 > ⚠️ Contrairement aux autres skills de la marketplace (lecture seule), ce skill **écrit dans Azure DevOps**. Aucune création n'a lieu sans confirmation explicite (voir Phase 4).
 
 ## Vue d'ensemble du flow
 
 1. **Acquisition de l'US & cadrage** — Récupérer l'US et choisir le mode de découpage
-2. **Découpage en tasks** — Déléguer à l'agent `us-splitter` avec l'US et le mode
+2. **Découpage en tasks** — Déléguer à l'agent `criteria-splitter` avec l'US et le mode
 3. **Validation du découpage** — Présenter les tasks, ajuster jusqu'à validation
 4. **Enregistrement Azure DevOps** — Proposer systématiquement de créer les tasks (rattachées à l'US)
 
@@ -67,15 +69,15 @@ Faire un récap bref du périmètre (US + mode) et confirmer avant de découper.
 
 ---
 
-## Phase 2 — Découpage en tasks via l'agent us-splitter
+## Phase 2 — Découpage en tasks via l'agent criteria-splitter
 
-Déléguer le découpage à l'agent `us-splitter` via le tool `Agent` (subagent_type=`us-splitter`).
+Déléguer le découpage à l'agent `criteria-splitter` via le tool `Agent` (subagent_type=`criteria-splitter`).
 
 **Prompt à fournir à l'agent** — inclure :
 - Le **contenu complet de l'US** (titre, description, contexte & règles métier, tous les critères d'acceptance, specs techniques, scope IN/OUT).
 - Le **mode retenu** (fonctionnel pur / ancré codebase).
 - L'ID/URL de l'US parente si connu (pour rappel dans l'en-tête).
-- L'instruction explicite : « Lire d'abord `${CLAUDE_PLUGIN_ROOT}/skills/split-us-into-tasks/references/task-template.md` puis produire le découpage en suivant ce template à la lettre. En mode ancré codebase, explorer le repo (`Grep`/`Glob`/`Read`) pour renseigner les fichiers concernés ; en mode fonctionnel pur, omettre cette section. »
+- L'instruction explicite : « Lire d'abord `${CLAUDE_PLUGIN_ROOT}/skills/split-us-by-criteria/references/task-template.md` puis produire le découpage en suivant ce template à la lettre. En mode ancré codebase, explorer le repo (`Grep`/`Glob`/`Read`) pour renseigner les fichiers concernés ; en mode fonctionnel pur, omettre cette section. »
 
 L'agent retourne une **liste ordonnée de tasks** en Markdown (en-tête de découpage + un bloc par task conforme au template).
 

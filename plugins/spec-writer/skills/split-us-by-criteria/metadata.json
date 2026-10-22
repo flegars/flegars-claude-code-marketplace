@@ -1,0 +1,10 @@
+{
+  "name": "split-us-by-criteria",
+  "displayName": "Split US By Criteria",
+  "description": "Découpe une User Story rédigée en tasks atomiques par critère d'acceptance et propose systématiquement de les enregistrer dans Azure DevOps, rattachées à l'US parente",
+  "version": "0.2.0",
+  "author": { "name": "Florian Legars", "email": "legars.florian@gmail.com" },
+  "tags": ["user-story", "task", "breakdown", "azure-devops", "planning", "product-owner"],
+  "category": "Productivity",
+  "updatedAt": "2026-10-22"
+}

@@ -24,17 +24,20 @@ Puis installer un plugin :
 
 ## Plugins disponibles
 
-### [`us-writer`](./plugins/us-writer)
+### [`spec-writer`](./plugins/spec-writer)
 
-> Rédige des User Stories standardisées suivant un template figé — à partir de la codebase **ou** d'un brief externe — puis les découpe en tasks enregistrables dans Azure DevOps.
+> Rédaction de spec de bout en bout : User Stories standardisées (depuis la codebase **ou** un brief externe), découpage fonctionnel d'une US par critère d'acceptance enregistrable dans Azure DevOps, et découpage technique d'une US ou d'une spec en tasks par couche (back, front, infra, data, QA).
 
-**À quoi ça sert** — Couvrir le cycle PO de bout en bout : transformer un besoin en User Story complète et exhaustive (toujours structurée selon la **même** grille figée), puis décomposer cette US en tasks actionnables. Trois points d'entrée selon l'étape :
+> ⚠️ **Migration depuis `us-writer`** — Le plugin s'appelait `us-writer` jusqu'en 0.3.0, et `/split-us-into-tasks` est devenu `/split-us-by-criteria`. Réinstaller : `/plugin uninstall us-writer@flegars-perso-marketplace` puis `/plugin install spec-writer@flegars-perso-marketplace`.
+
+**À quoi ça sert** — Couvrir la production de spec de bout en bout : transformer un besoin en User Story complète et exhaustive (toujours structurée selon la **même** grille figée), puis la décomposer en plan de travail, soit fonctionnellement, soit par couche technique. Quatre points d'entrée selon l'étape :
 
 - **Avec le code** (`/write-us-from-code`) — Rédiger l'US ancrée dans la codebase courante : forward US (feature à venir) ou reverse US (documenter une feature déjà implémentée).
 - **Sans le code** (`/write-us-from-brief`) — Rédiger l'US à partir d'un brief externe (recueil de besoin, maquette, fichier, doc). Pensé pour **Claude cowork** ou le cadrage amont, quand aucun repo n'est monté.
-- **Découper en tasks** (`/split-us-into-tasks`) — Décomposer une US déjà rédigée en tasks atomiques et **proposer systématiquement de les créer dans Azure DevOps**, rattachées à l'US parente.
+- **Découpage fonctionnel** (`/split-us-by-criteria`) — Décomposer une US déjà rédigée en tasks atomiques rattachées à ses critères d'acceptance, et **proposer systématiquement de les créer dans Azure DevOps**, rattachées à l'US parente.
+- **Découpage technique** (`/split-spec-by-layer`) — Décomposer une US **ou une spec libre** (spec technique, brief, epic) en tasks **par couche** (`BACK`, `FRONT`, `INFRA`, `DATA`, `QA`), articulées entre elles par des contrats d'interface explicites.
 
-Les deux commandes de rédaction produisent des US suivant **systématiquement** la même structure figée, et le découpage produit des tasks suivant un template de task figé — cohérence et exhaustivité garanties d'un artefact à l'autre.
+Chaque artefact suit un template figé — US, task fonctionnelle, task technique — pour garantir cohérence et exhaustivité d'un artefact à l'autre.
 
 **Ce que ça apporte :**
 
@@ -48,18 +51,25 @@ Les deux commandes de rédaction produisent des US suivant **systématiquement**
   2. **Acquisition & lecture des sources** — Texte collé inline, description de maquette / UI, fichier local (`.md` / `.txt` / `.pdf`), URL de doc externe (Notion, Confluence…) récupérée via `WebFetch`, ou une **ancienne US à mettre à jour** (réécrite intégralement au format figé). Argument passé au slash command (`$ARGUMENTS`) auto-détecté : chemin / URL / texte
   3. **Rédaction** — Délégation à l'agent `us-drafter` avec la synthèse des sources
   4. **Sortie** — Écriture dans `docs/user-stories/US-<domaine>-<slug>.md`, rendu inline (défaut en cowork), ou les deux
-- **Slash command `/split-us-into-tasks`** — Découpe une US **déjà rédigée** en tasks, puis propose systématiquement de les enregistrer dans Azure DevOps. Flow en 4 phases :
+- **Slash command `/split-us-by-criteria`** — Découpe fonctionnellement une US **déjà rédigée** en tasks, puis propose systématiquement de les enregistrer dans Azure DevOps. Flow en 4 phases :
   1. **Acquisition & cadrage** — Récupération de l'US depuis un work item Azure DevOps (`az boards work-item show`), une PR / issue GitHub (`gh`), ou un fichier `.md` local (fallback) ; choix du mode de découpage (fonctionnel pur / ancré codebase)
-  2. **Découpage** — Délégation à l'agent `us-splitter` qui produit une liste ordonnée de tasks
+  2. **Découpage** — Délégation à l'agent `criteria-splitter` qui produit une liste ordonnée de tasks
   3. **Validation** — Présentation et ajustement du découpage (fusionner, scinder, réordonner, ré-estimer)
   4. **Enregistrement Azure DevOps** — Création des tasks via `az boards work-item create` (org `INTERINVEST`) et rattachement à l'US parente via `relation add --relation-type parent`, avec **garde-fou de confirmation** avant toute écriture (seul skill mutant de la marketplace)
+- **Slash command `/split-spec-by-layer`** — Découpe une US ou une spec libre en tasks techniques par couche. **Lecture seule** côté Azure DevOps / GitHub. Flow en 4 phases :
+  1. **Acquisition & cadrage** — Source auto-détectée (work item Azure DevOps, issue / PR GitHub, fichier `.md`, texte collé) et qualifiée US ou spec libre ; choix du mode (spec pure / ancré codebase), des couches actives et de l'unité d'estimation (heures / story points)
+  2. **Découpage** — Délégation à l'agent `layer-splitter`
+  3. **Validation** — Tableau récapitulatif, ordre d'implémentation, matrice de couverture et totaux par couche ; ajustements (fusionner, scinder, changer de couche, ré-estimer, revoir un contrat)
+  4. **Sortie** — Rendu inline, fichier `docs/specs/<slug>-tech-tasks.md` (jamais d'écrasement silencieux), ou les deux
 - **Agent `us-writer`** — Product Owner senior virtuel qui **lit la codebase** avant d'écrire (jamais de comportement supposé), suit à la lettre le template, marque toute hypothèse `[HYPOTHÈSE]` et liste les questions ouvertes.
 - **Agent `us-drafter`** — Le pendant « sans code » : même rigueur, mais rédige à partir des seules sources fournies. Ne présume jamais d'un comportement système que le brief n'affirme pas ; le moindre trou du brief devient une question ouverte plutôt qu'une invention.
-- **Agent `us-splitter`** — Découpe une US validée en tasks atomiques : couverture intégrale des critères d'acceptance (aucun critère orphelin), dépendances et ordre d'implémentation explicites, estimation par task, et mapping vers les fichiers du code en mode ancré codebase.
+- **Agent `criteria-splitter`** — Découpe une US validée en tasks atomiques : couverture intégrale des critères d'acceptance (aucun critère orphelin), dépendances et ordre d'implémentation explicites, estimation par task, et mapping vers les fichiers du code en mode ancré codebase.
+- **Agent `layer-splitter`** — Lead technique full-stack virtuel : une seule couche par task, contrats d'interface (API, event, schéma, configuration) définis une seule fois dans la task productrice et référencés par les consommatrices, ordre `DATA → BACK → FRONT` avec `INFRA` en parallèle et `QA` en dernier, stack réelle détectée en mode ancré codebase (jamais de chemin inventé).
 - **Template d'US figé (partagé par les deux commandes de rédaction)** — Structure imposée : Titre `[Domaine] Verbe + Complément` / Description En tant que… / Contexte & Règles métier (avec, selon l'origine, un sous-bloc « Comportement actuel observé dans la codebase » **ou** « Sources analysées ») / Critères d'acceptance Gherkin (nominal + alternatifs + erreurs + bords) / Spécifications techniques / Maquettes / Dépendances / Scope IN-OUT / Estimation en story points / Questions ouvertes.
-- **Template de task figé** — Structure imposée pour chaque task issue du découpage : Titre `[Domaine] Verbe court` / Description / Definition of Done (checklist) / Critères d'acceptance couverts / Fichiers concernés (mode ancré codebase) / Dépendances / Estimation.
+- **Template de task fonctionnelle figé** — Structure imposée pour chaque task issue du découpage : Titre `[Domaine] Verbe court` / Description / Definition of Done (checklist) / Critères d'acceptance couverts / Fichiers concernés (mode ancré codebase) / Dépendances / Estimation.
+- **Template de task technique figé** — Référentiel **fermé** de 5 couches (`BACK` / `FRONT` / `INFRA` / `DATA` / `QA`) avec règles de frontière (tests unitaires dans la couche de dev, migration en `DATA`, déclaration de flag en `INFRA`…) et **socle de Definition of Done par couche**. En-tête imposé : source / stack / exigences recensées (Gherkin ou `EX-XX`) / tableau récapitulatif / ordre et lots parallélisables / matrice de couverture / totaux. Bloc de task imposé : Titre `[COUCHE][Domaine] Verbe + complément` / Objectif & périmètre IN-OUT / Exigences couvertes / Contrat d'interface / Détails d'implémentation / Definition of Done (socle + spécifique) / Dépendances / Estimation / Risques.
 
-**Quand l'utiliser** — `/write-us-from-code` avant de démarrer une feature sur un repo existant, ou pour rattraper la doc d'une feature en place. `/write-us-from-brief` en amont (PO/PM sans code sous la main), en Claude cowork, ou pour formaliser une maquette / un compte-rendu de réunion en spec. `/split-us-into-tasks` une fois l'US validée, pour la transformer en plan de travail et créer les tasks dans Azure DevOps.
+**Quand l'utiliser** — `/write-us-from-code` avant de démarrer une feature sur un repo existant, ou pour rattraper la doc d'une feature en place. `/write-us-from-brief` en amont (PO/PM sans code sous la main), en Claude cowork, ou pour formaliser une maquette / un compte-rendu de réunion en spec. `/split-us-by-criteria` une fois l'US validée, pour la transformer en plan de travail fonctionnel et créer les tasks dans Azure DevOps. `/split-spec-by-layer` pour préparer la répartition entre développeurs back, front, data, ops et QA, à partir d'une US ou d'une spec technique.
 
 ### [`pr-reviewer`](./plugins/pr-reviewer)
 
@@ -194,13 +204,14 @@ flegars-claude-code-marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json     # Manifest de la marketplace
 ├── plugins/
-│   ├── us-writer/
+│   ├── spec-writer/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
 │   │   ├── agents/
-│   │   │   ├── us-writer.md      # US ancrée dans le code
-│   │   │   ├── us-drafter.md     # US à partir d'un brief (sans code)
-│   │   │   └── us-splitter.md    # découpage d'une US en tasks
+│   │   │   ├── us-writer.md          # US ancrée dans le code
+│   │   │   ├── us-drafter.md         # US à partir d'un brief (sans code)
+│   │   │   ├── criteria-splitter.md  # découpage fonctionnel d'une US par critère
+│   │   │   └── layer-splitter.md     # découpage technique par couche
 │   │   └── skills/
 │   │       ├── write-us-from-code/
 │   │       │   ├── SKILL.md
@@ -210,11 +221,16 @@ flegars-claude-code-marketplace/
 │   │       ├── write-us-from-brief/
 │   │       │   ├── SKILL.md
 │   │       │   └── metadata.json
-│   │       └── split-us-into-tasks/
+│   │       ├── split-us-by-criteria/
+│   │       │   ├── SKILL.md
+│   │       │   ├── metadata.json
+│   │       │   └── references/
+│   │       │       └── task-template.md        # template de task fonctionnelle figé
+│   │       └── split-spec-by-layer/
 │   │           ├── SKILL.md
 │   │           ├── metadata.json
 │   │           └── references/
-│   │               └── task-template.md   # template de task figé
+│   │               └── tech-task-template.md   # template de task technique figé
 │   ├── pr-reviewer/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
