@@ -1,6 +1,6 @@
 # Template standardisé d'une Task
 
-> Ce template est la **structure de référence figée** utilisée par le skill `split-us-into-tasks` du plugin `us-writer`. Toute task issue du découpage d'une User Story DOIT respecter intégralement cette structure et l'ordre des sections.
+> Ce template est la **structure de référence figée** utilisée par le skill `split-us-by-criteria` du plugin `spec-writer`. Toute task issue du découpage d'une User Story DOIT respecter intégralement cette structure et l'ordre des sections.
 
 Le découpage produit une **liste ordonnée** de tasks. Chaque task est autonome, testable, et couvre une part précise du périmètre de l'US parente. Chaque section ci-dessous est obligatoire sauf mention explicite « *(si applicable)* ».
 
@@ -68,5 +68,5 @@ Estimation en **heures** OU en **story points** (1, 2, 3, 5, 8) — rester cohé
 - ❌ Task sans Definition of Done.
 - ❌ Task ne référençant aucun critère d'acceptance de l'US.
 - ❌ Découpage laissant un critère d'acceptance non couvert.
-- ❌ Task dont le titre décrit une couche technique sans livrable métier (« Faire le back », « Faire le front ») sans périmètre précis.
+- ❌ Task dont le titre décrit une couche technique sans livrable métier (« Faire le back », « Faire le front ») sans périmètre précis. Pour un découpage technique par couche, utiliser `/split-spec-by-layer`.
 - ❌ Estimation absente ou non justifiée.
