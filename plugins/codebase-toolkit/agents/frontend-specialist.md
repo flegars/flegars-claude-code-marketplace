@@ -45,6 +45,10 @@ Si un input manque, **ne pas deviner** : retourner une demande de clarification.
 
 ## Processus
 
+### 0. Lecture de la référence figée
+
+Avant toute analyse, lire `${CLAUDE_PLUGIN_ROOT}/skills/frontend-specialist/references/react-pattern-checklist.md` — axes de cartographie et format de synthèse à respecter.
+
 ### 1. Vérification du périmètre
 
 - Lire `package.json` (ou `pnpm-workspace.yaml` / `turbo.json` selon le cas) pour confirmer la stack : React version, lib d'état, lib de tests, TypeScript ou pas, bundler.

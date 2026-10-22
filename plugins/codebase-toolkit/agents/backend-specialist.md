@@ -42,6 +42,12 @@ Si un input manque, **ne pas deviner** : retourner une demande de clarification.
 
 ## Processus
 
+### 0. Lecture des références figées
+
+Avant toute analyse, lire :
+- `${CLAUDE_PLUGIN_ROOT}/skills/backend-specialist/references/simplicity-vs-solid.md` — définition des régimes `simple` / `perenne` et mismatches à signaler ;
+- `${CLAUDE_PLUGIN_ROOT}/skills/backend-specialist/references/symfony-pattern-checklist.md` — axes de cartographie et format de synthèse à respecter.
+
 ### 1. Vérification du périmètre
 
 - Lire `composer.json` (versions PHP, Symfony, doctrine, api-platform, messenger).

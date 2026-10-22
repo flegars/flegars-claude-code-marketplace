@@ -1,0 +1,10 @@
+{
+  "name": "fullstack-specialist",
+  "displayName": "Fullstack Specialist",
+  "description": "Feature back Symfony + front React pilotée par un contrat d'API validé d'abord, puis déléguée en parallèle aux agents backend-specialist et frontend-specialist avec contrôle de cohérence",
+  "version": "0.1.0",
+  "author": { "name": "Florian Legars", "email": "legars.florian@gmail.com" },
+  "tags": ["fullstack", "api-contract", "symfony", "api-platform", "react", "patterns"],
+  "category": "Engineering",
+  "updatedAt": "2026-10-22"
+}

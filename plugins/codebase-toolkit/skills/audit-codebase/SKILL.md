@@ -8,7 +8,7 @@ user_invocable: true
 
 Orchestre un **audit back-end PHP/Symfony complet**, module par module, qui produit un rapport markdown structuré : ce qui marche, ce qui pose problème, ce qui pourrait être simplifié, et comment le tout est testé / performe / s'aligne sur l'architecture revendiquée.
 
-Le plugin **réutilise l'agent `backend-specialist`** (du plugin homonyme) pour la cartographie de chaque module, et applique la **grille figée** et le **template figé** définis dans les références.
+Le skill **réutilise l'agent `backend-specialist`** (du même plugin `codebase-toolkit`) pour la cartographie de chaque module, et applique la **grille figée** et le **template figé** définis dans les références.
 
 ## Vue d'ensemble du flow
 

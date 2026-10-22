@@ -1,0 +1,11 @@
+{
+  "name": "codebase-toolkit",
+  "description": "Boîte à outils pour travailler sur la codebase courante en s'alignant strictement sur ses patterns : experts back-end PHP/Symfony et front-end React, feature fullstack pilotée par un contrat d'API, audit back-end module par module, cartographie d'onboarding et traçage d'un flux de bout en bout",
+  "version": "0.1.0",
+  "author": {
+    "name": "Florian Legars",
+    "email": "legars.florian@gmail.com"
+  },
+  "license": "MIT",
+  "keywords": ["codebase-analysis", "patterns", "php", "symfony", "backend", "react", "frontend", "fullstack", "ddd", "hexagonal", "cqrs", "solid", "simplicity", "hooks", "state-management", "testing", "audit", "tech-debt", "code-review", "onboarding", "flow"]
+}

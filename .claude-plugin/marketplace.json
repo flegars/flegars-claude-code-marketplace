@@ -34,25 +34,14 @@
       "category": "quality"
     },
     {
-      "name": "frontend-specialist",
-      "source": "./plugins/frontend-specialist",
-      "description": "Expert front-end React qui analyse les patterns du projet avant toute proposition et n'invente jamais une convention qui n'existe pas dans la codebase",
+      "name": "codebase-toolkit",
+      "source": "./plugins/codebase-toolkit",
+      "description": "Boîte à outils pour travailler sur la codebase courante en s'alignant strictement sur ses patterns : experts back-end PHP/Symfony et front-end React, feature fullstack pilotée par un contrat d'API, audit back-end module par module, cartographie d'onboarding et traçage d'un flux de bout en bout",
       "version": "0.1.0",
       "author": {
         "name": "Florian Legars"
       },
-      "keywords": ["react", "frontend", "patterns", "codebase-analysis", "hooks", "state-management", "testing"],
-      "category": "engineering"
-    },
-    {
-      "name": "backend-specialist",
-      "source": "./plugins/backend-specialist",
-      "description": "Expert back-end PHP/Symfony qui privilégie la solution la plus simple alignée sur les patterns du projet, et applique SOLID strictement sur le code pérenne",
-      "version": "0.1.0",
-      "author": {
-        "name": "Florian Legars"
-      },
-      "keywords": ["php", "symfony", "backend", "ddd", "solid", "simplicity", "patterns", "codebase-analysis"],
+      "keywords": ["codebase-analysis", "patterns", "php", "symfony", "backend", "react", "frontend", "fullstack", "audit", "tech-debt", "onboarding", "flow"],
       "category": "engineering"
     },
     {
@@ -65,17 +54,6 @@
       },
       "keywords": ["github", "activity", "standup", "daily", "recap", "gh-cli"],
       "category": "productivity"
-    },
-    {
-      "name": "audit-codebase",
-      "source": "./plugins/audit-codebase",
-      "description": "Audit back-end PHP/Symfony module par module avec rapport markdown structuré : points forts à conserver, risques & dette technique, opportunités de simplification, tests & qualité, performance & scalabilité, cohérence architecturale",
-      "version": "0.1.0",
-      "author": {
-        "name": "Florian Legars"
-      },
-      "keywords": ["php", "symfony", "backend", "audit", "tech-debt", "simplification", "ddd", "hexagonal", "cqrs"],
-      "category": "engineering"
     },
     {
       "name": "us-developer",
