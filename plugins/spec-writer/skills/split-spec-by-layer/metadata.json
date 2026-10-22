@@ -1,0 +1,10 @@
+{
+  "name": "split-spec-by-layer",
+  "displayName": "Split Spec By Layer",
+  "description": "Découpe une User Story ou une spec libre en tasks techniques par couche (BACK, FRONT, INFRA, DATA, QA), cohérentes entre elles grâce à un template de task technique figé",
+  "version": "0.1.0",
+  "author": { "name": "Florian Legars", "email": "legars.florian@gmail.com" },
+  "tags": ["spec", "technical-tasks", "breakdown", "backend", "frontend", "infra", "planning"],
+  "category": "Productivity",
+  "updatedAt": "2026-10-22"
+}
