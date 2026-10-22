@@ -1,0 +1,10 @@
+{
+  "name": "trace-flow",
+  "displayName": "Trace Flow",
+  "description": "Trace un flux de bout en bout (front → API → handler → base → events) depuis un point d'entrée, avec diagramme de séquence et étapes ancrées fichier:ligne, via l'agent flow-tracer",
+  "version": "0.1.0",
+  "author": { "name": "Florian Legars", "email": "legars.florian@gmail.com" },
+  "tags": ["flow", "tracing", "debugging", "codebase-analysis", "symfony", "react", "mermaid"],
+  "category": "Engineering",
+  "updatedAt": "2026-10-22"
+}
