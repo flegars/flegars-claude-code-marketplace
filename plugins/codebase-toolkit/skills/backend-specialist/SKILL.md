@@ -39,6 +39,9 @@ Reformuler le besoin en 3-5 lignes et confirmer via `AskUserQuestion` : « Ma re
 
 Cette phase est **obligatoire et toujours explicite**, même si le besoin semble évident. Le régime conditionne tout le reste.
 
+La définition complète des deux régimes, ce que l'agent fait et ne fait pas dans chacun, et les mismatches typiques sont figés dans :
+`${CLAUDE_PLUGIN_ROOT}/skills/backend-specialist/references/simplicity-vs-solid.md`
+
 Poser via `AskUserQuestion` :
 
 **« Quel régime appliquer pour cette intervention ? »**
@@ -87,6 +90,8 @@ Synthétiser :
 ## Phase 4 — Cartographie des patterns
 
 Identifier les conventions du projet **avant** d'appeler l'agent. Cette phase nourrit le prompt de l'agent.
+
+Suivre la checklist figée `${CLAUDE_PLUGIN_ROOT}/skills/backend-specialist/references/symfony-pattern-checklist.md` (9 axes) et restituer la cartographie selon sa section « Format de synthèse ». Les points ci-dessous en sont le résumé opérationnel.
 
 1. **Structure de dossiers**
    - `Glob src/*` pour repérer : `Domain/`, `Application/`, `Infrastructure/`, `UI/`, `Controller/`, `Entity/`, `Repository/`, `Resource/`, `Command/`, `Query/`, `Handler/`.
@@ -140,6 +145,7 @@ Déléguer à l'agent `backend-specialist` via le tool `Agent` (subagent_type=`b
 - Le **régime** confirmé en Phase 2 (`simple` ou `perenne`) — c'est l'input le plus important
 - Le mode choisi (`analyse` / `proposition` / `implementation`)
 - La cartographie de la Phase 4 (chemins + observations courtes)
+- L'instruction de lire d'abord `${CLAUDE_PLUGIN_ROOT}/skills/backend-specialist/references/simplicity-vs-solid.md` et `${CLAUDE_PLUGIN_ROOT}/skills/backend-specialist/references/symfony-pattern-checklist.md`
 - Le périmètre d'édition autorisé si mode `implementation` (dossiers / fichiers que l'agent peut toucher)
 
 L'agent retourne :

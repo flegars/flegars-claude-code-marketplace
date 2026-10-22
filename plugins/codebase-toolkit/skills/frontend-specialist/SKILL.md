@@ -54,6 +54,8 @@ Lire rapidement :
 
 Identifier les conventions du projet **avant** d'appeler l'agent. Cette phase nourrit le prompt de l'agent — elle évite que l'agent doive tout (re)découvrir lui-même.
 
+Suivre la checklist figée `${CLAUDE_PLUGIN_ROOT}/skills/frontend-specialist/references/react-pattern-checklist.md` (10 axes) et restituer la cartographie selon sa section « Format de synthèse ». Les points ci-dessous en sont le résumé opérationnel.
+
 1. **Structure de dossiers**
    - `Glob` sur `src/**` pour repérer `features/`, `pages/`, `components/`, `hooks/`, `lib/`, `store/`, `api/`.
    - Noter la convention principale (`features/` ou `pages/` ? colocation ou non ?).
@@ -92,6 +94,7 @@ Déléguer à l'agent `frontend-specialist` via le tool `Agent` (subagent_type=`
 - Le besoin reformulé et confirmé en Phase 1
 - Le mode choisi (`analyse` / `proposition` / `implementation`)
 - La cartographie de la Phase 3 (chemins + observations courtes)
+- L'instruction de lire d'abord `${CLAUDE_PLUGIN_ROOT}/skills/frontend-specialist/references/react-pattern-checklist.md`
 - Le périmètre d'édition autorisé si mode `implementation` (dossiers / fichiers que l'agent peut toucher)
 - Toute mise en garde issue de la Phase 2 (stack hors périmètre)
 
