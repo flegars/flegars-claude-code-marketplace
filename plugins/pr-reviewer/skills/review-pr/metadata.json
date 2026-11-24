@@ -1,13 +1,13 @@
 {
   "name": "review-pr",
   "displayName": "Review PR",
-  "description": "Review standardisée d'une Pull Request GitHub ou Azure DevOps avec note /20, ressenti général, axes d'amélioration et alignement avec les US rattachées",
-  "version": "0.1.0",
+  "description": "Review de code d'une PR / MR en commentaires inline avec synthèse unique, multi-plateforme (GitHub, Azure DevOps, GitLab) et mode local",
+  "version": "2.0.0",
   "author": {
     "name": "Florian Legars",
     "email": "legars.florian@gmail.com"
   },
-  "tags": ["code-review", "pull-request", "github", "azure-devops", "user-story", "quality"],
+  "tags": ["code-review", "pull-request", "merge-request", "inline-comments", "github", "azure-devops", "gitlab", "claude-md", "user-story"],
   "category": "Quality",
-  "updatedAt": "2026-05-26"
+  "updatedAt": "2026-11-24"
 }
