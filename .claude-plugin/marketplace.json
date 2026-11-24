@@ -25,12 +25,12 @@
     {
       "name": "pr-reviewer",
       "source": "./plugins/pr-reviewer",
-      "description": "Review standardisée de Pull Requests GitHub ou Azure DevOps avec note /20, ressenti global, axes d'amélioration et alignement avec les US rattachées",
-      "version": "0.2.0",
+      "description": "Review de code de Pull Requests / Merge Requests en commentaires inline (sévérité, justification, proposition) + synthèse unique, sans note ni approbation. Règles CLAUDE.md du repo, US rattachées, détection des correctifs récents écrasés. GitHub, Azure DevOps (expérimental), GitLab (expérimental) et mode local universel",
+      "version": "2.0.0",
       "author": {
         "name": "Florian Legars"
       },
-      "keywords": ["code-review", "pull-request", "github", "azure-devops", "user-story", "quality"],
+      "keywords": ["code-review", "pull-request", "merge-request", "inline-comments", "github", "azure-devops", "gitlab", "claude-md", "user-story"],
       "category": "quality"
     },
     {

@@ -73,23 +73,48 @@ Chaque artefact suit un template figé — US, task fonctionnelle, task techniqu
 
 ### [`pr-reviewer`](./plugins/pr-reviewer)
 
-> Review standardisée de Pull Requests GitHub ou Azure DevOps avec note /20, ressenti global, axes d'amélioration et alignement avec les User Stories rattachées.
+> Review de code de Pull Requests / Merge Requests : des problèmes concrets en commentaires inline, une synthèse unique, aucune note et aucune approbation — sur GitHub, Azure DevOps, GitLab ou en local.
 
-**À quoi ça sert** — Produire des reviews de PR **reproductibles** : même grille, même structure, même rigueur quel que soit le repo. Le plugin se branche sur les connexions déjà disponibles (`gh` CLI pour GitHub, MCP `devops` pour Azure DevOps) pour récupérer la PR, son diff et ses User Stories / work items rattachés, puis confronte le code livré à ce que demandent les specs.
+> ⚠️ **v2.0.0 — changement de comportement.** La note /20 et le rapport figé disparaissent au profit de commentaires inline. Voir la [migration depuis la v1](./plugins/pr-reviewer/CHANGELOG.md#migration-depuis-la-v1-0x).
+
+**À quoi ça sert** — Relire une PR comme le ferait un reviewer exigeant : chaque commentaire vise des lignes du diff et porte une sévérité (`bloquant` | `important` | `suggestion` | `question`), le problème, une justification vérifiable (règle du `CLAUDE.md` du repo, fichier existant, commit cité) et une proposition concrète. La plateforme n'empêche jamais la review : sans CLI authentifiée ou sur un hébergement non supporté, le plugin bascule en mode local.
 
 **Ce que ça apporte :**
 
-- **Slash command `/review-pr [url] [--inline|--local]`** — Orchestre un flow en 5 phases :
-  1. **Cible** — Détection auto via la branche courante (`gh pr view`) ou MCP `devops`, sinon URL passée en argument
-  2. **Fetch** — PR + diff + US/work items rattachés (parsing `closes #N` côté GitHub, liens explicites côté Azure)
-  3. **Détection stack** — `composer.json` / `package.json` / `go.mod` / `pyproject.toml` pour activer la sous-grille adaptative
-  4. **Analyse** — Délégation à l'agent `pr-reviewer` avec tout le contexte
-  5. **Sortie** — Commentaires inline + commentaire global sur la PR (mode `--inline`) ou fichier `reviews/PR-<id>.md` (mode `--local`). **Sur Azure DevOps, publication inline d'office** : la review est postée directement sur la PR sans redemander le mode ni confirmation préalable (`--local` pour forcer le fichier local ; GitHub garde sa confirmation avant publication)
-- **Agent `pr-reviewer`** — Un reviewer senior multi-stack rigoureux, qui suit à la lettre la grille et le template figés du plugin. Cite des lignes précises (`path:line`), propose des fix copiables, refuse d'inventer des patterns « du projet » qu'il n'aurait pas lus.
-- **Grille de notation hybride /20** — 14 points universels (qualité, sécurité, tests, lisibilité, **alignement US**, architecture) + 6 points adaptatifs activés selon la stack détectée (Symfony/DDD, Go, TypeScript/React, Python, ou fallback générique).
-- **Template de rapport figé** — Structure imposée : titre `📊 Score: X/20 — <ressenti>` / 📋 Alignement avec les US / ✅ Points forts / ⚠️ Axes d'amélioration par sévérité (Critique / Important / Mineur) / 🐛 Problèmes critiques si applicable / 📚 Conformité architecture (sous-grille adaptative) / 💡 Recommandations actionnables / 🧮 Détail du score.
+- **Slash command `/review-pr [url|numéro|branche] [--platform github|ado|gitlab|local] [--base <branche>] [--dry-run] [--request-changes]`** :
+  1. **Collecte** — détection de la plateforme, vérification de la CLI, récupération de la PR, diff calculé localement, `CLAUDE.md` à appliquer, linters configurés, risques de régression
+  2. **Analyse** — l'agent `pr-reviewer` (cœur neutre) produit les commentaires au format interne
+  3. **Publication** — filtrage des lignes hors diff, plafond priorisé par sévérité, idempotence, puis publication directe (ou rapport local, ou `--dry-run`)
+- **Règles du repo d'abord** — les `CLAUDE.md` du repo relu (racine et dossiers parents des fichiers modifiés) priment ; chaque commentaire qui en découle cite la règle.
+- **US rattachées** — critères d'acceptation non couverts et modifications hors périmètre, pour les US / issues rattachées directement à la PR (absence signalée, jamais bloquante).
+- **Risque de régression** — si une ligne remplacée a été modifiée par un correctif (`fix`, `hotfix`) dans les 14 derniers jours, une `question` cite le commit et la PR d'origine. Jamais d'affirmation.
+- **Axes ciblés** — duplication et réutilisation vérifiées dans tout le repo (chemin cité), interfaces commentées dans deux cas précis seulement, aucun commentaire de style couvert par un linter.
+- **Synthèse unique** — US détectée, `CLAUDE.md` chargés, problèmes par sévérité, risques de régression, remarques non postables en inline ; mise à jour à chaque passage.
+- **Idempotence** — un second passage ne reposte pas un commentaire déjà présent sur la même plage.
+- **Non bloquant par défaut** — `--request-changes` traduit un verdict `blocking` en statut natif ; le plugin n'approuve jamais.
 
-**Quand l'utiliser** — Pour reviewer une PR ouverte (avant ou après merge), pour standardiser les reviews d'équipe, ou pour s'auto-évaluer avant de demander une review humaine.
+**Plateformes**
+
+| Plateforme | CLI (déjà authentifiée) | Statut |
+|---|---|---|
+| GitHub (github.com, GitHub Enterprise) | `gh` | validé en `--dry-run` sur une PR réelle |
+| Azure DevOps | `az` + extension `azure-devops` | **expérimental** |
+| GitLab (gitlab.com, auto-hébergé) | `glab` | **expérimental** |
+| Toute autre / sans authentification | — | mode local (`reviews/*.md` + `.json`) |
+
+Le plugin ne manipule aucun token. CLI absente ou non authentifiée : la commande d'authentification est affichée et la review continue en local.
+
+**Configuration** (optionnelle) — `.claude/pr-reviewer.json` à la racine du repo relu :
+
+```json
+{ "platform": "github", "host": "github.mon-entreprise.fr", "base": "develop", "regression_window_days": 14, "max_inline_comments": 15 }
+```
+
+Détection de la plateforme : `--platform`, puis ce fichier, puis le remote `origin` ; domaine inconnu → mode local. Détail : [`config.md`](./plugins/pr-reviewer/skills/review-pr/references/config.md) et [`platforms.md`](./plugins/pr-reviewer/skills/review-pr/references/platforms.md).
+
+**Prérequis** — `git` et Python 3.10+ (bibliothèque standard uniquement). Tests : `python3 plugins/pr-reviewer/skills/review-pr/tests/test_prr.py`.
+
+**Quand l'utiliser** — Pour relire une PR ouverte, s'auto-relire avant de demander une review humaine (`--platform local`), ou vérifier ce qui serait posté (`--dry-run`).
 
 ### [`codebase-toolkit`](./plugins/codebase-toolkit)
 
@@ -257,15 +282,25 @@ flegars-claude-code-marketplace/
 │   ├── pr-reviewer/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
+│   │   ├── CHANGELOG.md                # historique + migration depuis la v1
 │   │   ├── agents/
-│   │   │   └── pr-reviewer.md
+│   │   │   └── pr-reviewer.md          # cœur de review, sans référence de plateforme
 │   │   └── skills/
 │   │       └── review-pr/
 │   │           ├── SKILL.md
 │   │           ├── metadata.json
-│   │           └── references/
-│   │               ├── review-template.md
-│   │               └── scoring-rubric.md
+│   │           ├── references/
+│   │           │   ├── review-format.md    # format interne neutre
+│   │           │   ├── review-rules.md     # règles de review
+│   │           │   ├── config.md           # .claude/pr-reviewer.json
+│   │           │   └── platforms.md        # contrat et matrice des adaptateurs
+│   │           ├── scripts/
+│   │           │   ├── prr.py              # collect / publish
+│   │           │   └── prr/
+│   │           │       ├── core/           # diff, sélection, régression, rendu
+│   │           │       └── adapters/       # github, ado, gitlab, local
+│   │           └── tests/
+│   │               └── test_prr.py
 │   ├── codebase-toolkit/
 │   │   ├── .claude-plugin/
 │   │   │   └── plugin.json
